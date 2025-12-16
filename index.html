@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brick Breaker | Build vs Break</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0b0d16;
+      color: #eaeaf0;
+      font-family: system-ui, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+    }
+    #ui { display: flex; gap: 8px; flex-wrap: wrap; }
+    button, input {
+      background: #161a30;
+      color: #eaeaf0;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    canvas {
+      background: #000;
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      touch-action: manipulation;
+    }
+    #menu {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 300px;
+      height: 100%;
+      background: #101325;
+      padding: 16px;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    #menu.open { right: 0; }
+    .score-item { opacity: 0.8; font-size: 14px; margin-bottom: 6px; }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 5;
+    }
+    #overlay.show { display: flex; }
+  </style>
+</head>
+<body>
+<header>
+  <div id="ui">
+    <button id="modeBtn">MANUAL</button>
+    <button id="paddleBtn">PADDLES: 1</button>
+    <button id="aiPaddleBtn">AI PADDLE: ON</button>
+    <button id="pauseBtn">PAUSE</button>
+  </div>
+  <button id="menuBtn">☰</button>
+</header>
+
+<div style="position:relative">
+  <canvas id="game" width="820" height="520"></canvas>
+  <div id="overlay">
+    <h2>Game Over</h2>
+    <button onclick="resetGame()">Reset</button>
+  </div>
+</div>
+
+<div id="menu">
+  <h3>Score History</h3>
+  <div id="scoreHistory"></div>
+  <button onclick="resetScores()">Reset History</button>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let mode = 'MANUAL';
+let paused = false;
+let paddleCount = 1;
+let aiPaddle = true;
+
+let playerScore = 0;
+let aiBreakScore = 0;
+let aiBuildScore = 0;
+let lives = 3;
+
+let highscores = JSON.parse(localStorage.getItem('bb_scores')||'[]');
+
+const paddleW = 120, paddleH = 12;
+const paddles = {
+  bottom: { x: 350, y: canvas.height-30 },
+  top: { x: 350, y: 20 }
+};
+
+const ball = { x: 410, y: 260, vx: 4, vy: -4, r: 6 };
+
+const ballsAI = [
+  { x: 400, y: 260, vx: 3, vy: -3, type: 'break', color:'#ff5c5c' },
+  { x: 430, y: 260, vx: -3, vy: 3, type: 'build', color:'#4dff88' }
+];
+
+const brick = { w: 68, h: 20, gap: 8 };
+let bricks = [];
+let totalBricks = 0;
+
+function initBricks() {
+  bricks=[];
+  const startY = paddleCount===1?60:160;
+  for(let r=0;r<6;r++){
+    for(let c=0;c<10;c++){
+      bricks.push({ x:40+c*(brick.w+brick.gap), y:startY+r*(brick.h+brick.gap), active:true });
+    }
+  }
+  totalBricks = bricks.length;
+}
+initBricks();
+
+function saveScore(){
+  highscores.unshift({ score: playerScore+aiBreakScore-aiBuildScore, date:new Date().toLocaleString() });
+  highscores=highscores.slice(0,20);
+  localStorage.setItem('bb_scores',JSON.stringify(highscores));
+  renderScores();
+}
+function renderScores(){
+  scoreHistory.innerHTML = highscores.map(s=>`<div class='score-item'>${s.score} • ${s.date}</div>`).join('');
+}
+renderScores();
+function resetScores(){ highscores=[]; localStorage.removeItem('bb_scores'); renderScores(); }
+
+function glowBall(b){
+  ctx.shadowColor=b.color||'#fff'; ctx.shadowBlur=12;
+  ctx.fillStyle=b.color||'#fff';
+  ctx.beginPath(); ctx.arc(b.x,b.y,b.r||6,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  bricks.forEach(b=>{ if(b.active){ ctx.fillStyle='#3a7bfd'; ctx.fillRect(b.x,b.y,brick.w,brick.h); } });
+  if(mode==='MANUAL'||aiPaddle){
+    ctx.fillStyle='#eaeaf0';
+    ctx.fillRect(paddles.bottom.x,paddles.bottom.y,paddleW,paddleH);
+    if(paddleCount===2) ctx.fillRect(paddles.top.x,paddles.top.y,paddleW,paddleH);
+  }
+  if(mode==='MANUAL') glowBall(ball); else ballsAI.forEach(glowBall);
+
+  const activeCount = bricks.filter(b=>b.active).length;
+  const greenPct = Math.round((activeCount/totalBricks)*100);
+  const redPct = 100-greenPct;
+
+  ctx.fillStyle='#aaa';
+  ctx.fillText(`Player: ${playerScore}`,10,canvas.height-10);
+  ctx.fillText(`Red: ${aiBreakScore}`,120,canvas.height-10);
+  ctx.fillText(`Green: ${aiBuildScore}`,220,canvas.height-10);
+  ctx.fillText(`Lives: ${lives}`,canvas.width-70,canvas.height-10);
+
+  ctx.fillStyle='#ff5c5c'; ctx.fillRect(10,10,redPct*2,6);
+  ctx.fillStyle='#4dff88'; ctx.fillRect(10+redPct*2,10,greenPct*2,6);
+}
+
+function collidePaddle(b,p){ return b.x>p.x&&b.x<p.x+paddleW&&b.y+b.r>p.y&&b.y-b.r<p.y+paddleH; }
+
+function updateManual(){
+  ball.x+=ball.vx; ball.y+=ball.vy;
+  if(ball.x<0||ball.x>canvas.width) ball.vx*=-1;
+  if(ball.y<0) ball.vy*=-1;
+
+  if(collidePaddle(ball,paddles.bottom)||(paddleCount===2&&collidePaddle(ball,paddles.top))) ball.vy*=-1;
+
+  bricks.forEach(b=>{
+    if(b.active&&ball.x>b.x&&ball.x<b.x+brick.w&&ball.y>b.y&&ball.y<b.y+brick.h){
+      b.active=false; ball.vy*=-1; playerScore+=10;
+    }
+  });
+
+  if(ball.y>canvas.height){
+    lives--;
+    if(lives<=0){ saveScore(); overlay.classList.add('show'); paused=true; }
+    ball.x=410; ball.y=260; ball.vy=-4;
+  }
+}
+
+function updateAI(){
+  if(aiPaddle){
+    ballsAI.forEach(b=>{
+      const p=b.y<canvas.height/2?paddles.top:paddles.bottom;
+      p.x+=(b.x-p.x-paddleW/2)*0.05;
+    });
+  }
+
+  ballsAI.forEach(ball=>{
+    ball.x+=ball.vx; ball.y+=ball.vy;
+    if(ball.x<0||ball.x>canvas.width) ball.vx*=-1;
+    if(ball.y<0||ball.y>canvas.height) ball.vy*=-1;
+
+    bricks.forEach(b=>{
+      if(ball.x>b.x&&ball.x<b.x+brick.w&&ball.y>b.y&&ball.y<b.y+brick.h){
+        if(ball.type==='break'&&b.active){ b.active=false; aiBreakScore+=5; }
+        if(ball.type==='build'){
+          const near=bricks.find(n=>!n.active&&Math.abs(n.x-b.x)<brick.w*1.2&&Math.abs(n.y-b.y)<brick.h*1.2);
+          if(near){ near.active=true; aiBuildScore+=5; }
+        }
+        ball.vy*=-1;
+      }
+    });
+  });
+}
+
+function loop(){
+  if(!paused){ mode==='MANUAL'?updateManual():updateAI(); draw(); }
+  requestAnimationFrame(loop);
+}
+loop();
+
+function resetGame(){
+  overlay.classList.remove('show'); paused=false;
+  lives=3; playerScore=aiBreakScore=aiBuildScore=0;
+  initBricks();
+}
+
+// Tap based paddles
+canvas.addEventListener('pointerdown',e=>{
+  if(mode==='MANUAL'||aiPaddle){
+    const rect=canvas.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const dx = x<canvas.width/2?-40:40;
+    paddles.bottom.x=Math.max(0,Math.min(canvas.width-paddleW,paddles.bottom.x+dx));
+    paddles.top.x=Math.max(0,Math.min(canvas.width-paddleW,paddles.top.x+dx));
+  }
+});
+
+modeBtn.onclick=()=>mode=mode==='MANUAL'?'AI':'MANUAL';
+paddleBtn.onclick=()=>{ paddleCount=paddleCount===1?2:1; paddleBtn.innerText='PADDLES: '+paddleCount; initBricks(); };
+aiPaddleBtn.onclick=()=>{ aiPaddle=!aiPaddle; aiPaddleBtn.innerText='AI PADDLE: '+(aiPaddle?'ON':'OFF'); };
+pauseBtn.onclick=()=>paused=!paused;
+menuBtn.onclick=()=>menu.classList.toggle('open');
+</script>
+</body>
+</html>
