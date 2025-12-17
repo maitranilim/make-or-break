@@ -1,10 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="google-adsense-account" content="ca-pub-4315629123147124">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Make-or-Break Simulation</title>
+    <meta name="description" content="Play Make-or-Break: An interactive physics simulation game. Control chaos, speed, and strategy in this builder vs. breaker battle.">
+    <meta name="keywords" content="physics simulation, browser game, chaos theory game, builder vs breaker, interactive strategy, HTML5 game">
+    <title>Make-or-Break Simulation | Physics Strategy Game</title>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124"
+     crossorigin="anonymous"></script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "What is the Make-or-Break Simulation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Make-or-Break is an interactive browser-based physics simulation where two autonomous agents—a Builder (Green) and a Breaker (Red)—compete to control a grid of bricks. Users can adjust parameters like speed, time, and chaos factors in real-time."
+        }
+      }, {
+        "@type": "Question",
+        "name": "How does the Chaos slider affect the game?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Chaos slider introduces random velocity vectors to the agents' movement. A higher chaos setting makes the simulation less predictable, demonstrating principles of randomness and entropy in a closed system."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Can I play this simulation on mobile?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Make-or-Break is fully responsive and optimized for mobile devices, tablets, and desktops using HTML5 Canvas technology."
+        }
+      }, {
+        "@type": "Question",
+        "name": "What is the goal of the simulation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The goal depends on which side you root for. The Builder attempts to repair 'broken' empty slots, while the Breaker attempts to destroy active bricks. The winner is determined by who controls the majority of the grid when the timer runs out."
+        }
+      }]
+    }
+    </script>
+
     <style>
         :root {
             --bg-color: #0b0d16;
@@ -150,11 +191,11 @@
             max-width: 90%;
         }
 
-        /* --- Overlays --- */
-        #overlay-result {
+        /* --- Overlays (Result & FAQ) --- */
+        .overlay-modal {
             position: absolute;
             inset: 0;
-            background: rgba(11, 13, 22, 0.9);
+            background: rgba(11, 13, 22, 0.95);
             backdrop-filter: blur(8px);
             display: none;
             flex-direction: column;
@@ -162,11 +203,23 @@
             align-items: center;
             z-index: 20;
             animation: fadeIn 0.3s ease;
+            padding: 20px;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         h2 { font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: -1px; text-transform: uppercase; }
         .subtitle { font-size: 1.1rem; color: #889; margin-bottom: 30px; }
+
+        /* FAQ Specific Styles */
+        #overlay-faq { justify-content: flex-start; padding-top: 60px; overflow-y: auto; }
+        .faq-container { max-width: 800px; width: 100%; }
+        .faq-item { margin-bottom: 24px; border-bottom: 1px solid #2a2d40; padding-bottom: 16px; }
+        .faq-question { font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 8px; font-weight: bold; }
+        .faq-answer { font-size: 0.95rem; color: #ccc; line-height: 1.5; }
+        .close-modal-btn { 
+            position: absolute; top: 20px; right: 20px; 
+            font-size: 24px; background: none; border: none; color: #fff; cursor: pointer;
+        }
 
         /* --- Side Menu --- */
         #side-menu {
@@ -226,14 +279,6 @@
         }
 
     </style>
-    <!-- Google AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124"
-     crossorigin="anonymous"></script>
-    <!-- NOTE: Replace 'ca-pub-4315629123147124' with your actual Google AdSense Publisher ID -->
-<!-- Add ad units in the body where you want ads to appear (e.g., above or below the game) -->
-
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124"
-     crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -273,9 +318,10 @@
     </div>
 
     <div style="display:flex; align-items:center;">
-        <button class="icon-btn" id="btn-sound" title="Toggle Sound">🔊</button>
+        <button id="btn-faq-toggle" style="margin-right: 10px;">FAQ</button>
+        <button class="icon-btn" id="btn-sound" title="Toggle Sound">矧</button>
         <button id="btn-reset" style="margin-left: 10px;">Reset</button>
-        <button class="icon-btn" id="btn-menu">🏆</button>
+        <button class="icon-btn" id="btn-menu">醇</button>
     </div>
 </header>
 
@@ -284,17 +330,51 @@
     <canvas id="gameCanvas"></canvas>
     <canvas id="graph-container"></canvas>
     
-    <div id="overlay-result">
+    <div id="overlay-result" class="overlay-modal">
         <h2 id="result-title">Title</h2>
         <div class="subtitle" id="result-desc">Description</div>
         <button id="btn-play-again" style="padding: 12px 30px; font-size:14px; background: var(--accent-blue); border:none; color:white;">Play Again</button>
+    </div>
+
+    <div id="overlay-faq" class="overlay-modal">
+        <button class="close-modal-btn" id="btn-close-faq">ﾃ/button>
+        <h2>About & FAQ</h2>
+        <div class="subtitle">Frequently Asked Questions</div>
+        
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">What is Make-or-Break?</div>
+                <div class="faq-answer">Make-or-Break is an interactive simulation game where two forces compete: the Builder (Green), who constructs and repairs, and the Breaker (Red), who seeks to dismantle the grid. It visualizes the balance between order and chaos.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">How do the sliders work?</div>
+                <div class="faq-answer">
+                    <ul>
+                        <li><strong style="color:var(--accent-red)">Break/Build:</strong> Adjusts the movement speed of the respective agents.</li>
+                        <li><strong style="color:var(--accent-blue)">Time:</strong> Sets the duration of the match.</li>
+                        <li><strong>Chaos:</strong> Adds randomness to the agents' trajectories, simulating unpredictable environmental factors.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">How is the winner decided?</div>
+                <div class="faq-answer">When the timer hits zero, the simulation calculates the percentage of the grid that is active (green). If more than 50% of the grid is active, the Builder wins. Otherwise, the Breaker takes the victory.</div>
+            </div>
+             <div class="faq-item">
+                <div class="faq-question">Is this game free to play?</div>
+                <div class="faq-answer">Yes, this is a free browser-based physics game.</div>
+            </div>
+        </div>
+        <div style="margin-top:20px; width: 100%; text-align: center; color: #555; border: 1px dashed #333; padding: 20px;">
+            <small>Advertisement</small>
+            </div>
     </div>
 </div>
 
 <div id="side-menu">
     <div class="menu-header">
         <h3>Match History</h3>
-        <button class="icon-btn" id="btn-close-menu">×</button>
+        <button class="icon-btn" id="btn-close-menu">ﾃ/button>
     </div>
     <div class="menu-content">
         <button id="btn-clear-history" style="width:100%; margin-bottom:15px; background: #2a1a1a; color: #ff5c5c; border-color: #442222;">Clear History</button>
@@ -370,7 +450,8 @@ const labelGreen = document.getElementById('val-green');
 const labelTime = document.getElementById('val-time');
 const labelChaos = document.getElementById('val-chaos');
 const timerDisplay = document.getElementById('timer-display');
-const overlay = document.getElementById('overlay-result');
+const overlayResult = document.getElementById('overlay-result');
+const overlayFaq = document.getElementById('overlay-faq');
 const btnSound = document.getElementById('btn-sound');
 
 // State
@@ -433,7 +514,7 @@ function resetSimulation() {
     timerDisplay.innerText = state.timeLeft;
     timerDisplay.className = '';
     
-    overlay.style.display = 'none';
+    overlayResult.style.display = 'none';
 
     initBricks();
     initBalls();
@@ -651,7 +732,7 @@ function endGame() {
         desc.innerText = `Chaos reigns! Only ${greenPct}% of the grid remains.`;
     }
     
-    overlay.style.display = 'flex';
+    overlayResult.style.display = 'flex';
 }
 
 /**
@@ -873,13 +954,21 @@ document.getElementById('btn-play-again').onclick = () => resetSimulation();
 document.getElementById('btn-sound').onclick = function() {
     const enabled = AudioEngine.toggle();
     this.style.opacity = enabled ? '1' : '0.5';
-    this.innerText = enabled ? '🔊' : '🔇';
+    this.innerText = enabled ? '矧' : '這';
     this.classList.toggle('active');
 };
 
 const menu = document.getElementById('side-menu');
 document.getElementById('btn-menu').onclick = () => menu.classList.add('open');
 document.getElementById('btn-close-menu').onclick = () => menu.classList.remove('open');
+
+// FAQ Toggle Events
+document.getElementById('btn-faq-toggle').onclick = () => {
+    overlayFaq.style.display = 'flex';
+};
+document.getElementById('btn-close-faq').onclick = () => {
+    overlayFaq.style.display = 'none';
+};
 
 window.addEventListener('resize', resize);
 
