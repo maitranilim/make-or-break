@@ -3,104 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Play Make-or-Break: An interactive physics simulation game. Control chaos, speed, and strategy in this builder vs. breaker battle.">
-    <meta name="keywords" content="physics simulation, browser game, chaos theory game, builder vs breaker, interactive strategy, HTML5 game">
-    <title>Make-or-Break Simulation | Physics Strategy Game</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Make-or-Break: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
+    <meta name="keywords" content="simulation game, physics, stress relief, builder vs breaker, chaos theory, interactive art">
+    <title>Make-or-Break | Interactive Physics Simulation</title>
 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124"
-     crossorigin="anonymous"></script>
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124" crossorigin="anonymous"></script>
 
+    <!-- Structured Data for SEO -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [{
-        "@type": "Question",
-        "name": "What is the Make-or-Break Simulation?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Make-or-Break is an interactive browser-based physics simulation where two autonomous agents—a Builder (Green) and a Breaker (Red)—compete to control a grid of bricks. Users can adjust parameters like speed, time, and chaos factors in real-time."
-        }
-      }, {
-        "@type": "Question",
-        "name": "How does the Chaos slider affect the game?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "The Chaos slider introduces random velocity vectors to the agents' movement. A higher chaos setting makes the simulation less predictable, demonstrating principles of randomness and entropy in a closed system."
-        }
-      }, {
-        "@type": "Question",
-        "name": "Can I play this simulation on mobile?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes, Make-or-Break is fully responsive and optimized for mobile devices, tablets, and desktops using HTML5 Canvas technology."
-        }
-      }, {
-        "@type": "Question",
-        "name": "What is the goal of the simulation?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "The goal depends on which side you root for. The Builder attempts to repair 'broken' empty slots, while the Breaker attempts to destroy active bricks. The winner is determined by who controls the majority of the grid when the timer runs out."
-        }
-      }]
+      "@type": "WebApplication",
+      "name": "Make-or-Break Simulation",
+      "description": "An interactive physics simulation demonstrating the balance between creation and destruction.",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any"
     }
     </script>
 
     <style>
+        /* --- CSS VARIABLES & RESET --- */
         :root {
             --bg-color: #0b0d16;
             --panel-bg: #161a30;
             --text-color: #eaeaf0;
+            --text-muted: #888999;
             --accent-red: #ff5c5c;
             --accent-green: #4dff88;
             --accent-blue: #3a7bfd;
-            --font-family: system-ui, -apple-system, sans-serif;
+            --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        
         body {
             margin: 0;
             background: var(--bg-color);
             color: var(--text-color);
-            font-family: var(--font-family);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            overflow-y: auto; /* Allow scrolling */
         }
 
-        /* --- UI Header --- */
+        h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+        p { line-height: 1.6; color: var(--text-muted); }
+
+        /* --- HEADER & CONTROLS --- */
         header {
-            height: 90px;
+            height: auto;
+            min-height: 80px;
             background: rgba(11, 13, 22, 0.95);
             border-bottom: 1px solid #2a2d40;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
-            z-index: 10;
+            padding: 10px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
         .controls-group {
             display: flex;
-            gap: 16px;
+            gap: 20px;
             align-items: center;
             flex: 1;
-            overflow-x: auto;
-            scrollbar-width: none;
-            padding-right: 10px;
+            flex-wrap: wrap; /* Prevent chopping */
         }
 
         .slider-container {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            min-width: 90px;
+            gap: 6px;
+            min-width: 100px;
+            flex-grow: 1;
+            max-width: 150px;
         }
 
         .slider-label {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -115,113 +101,183 @@
             border-radius: 2px;
             appearance: none;
             outline: none;
+            cursor: pointer;
         }
         input[type=range]::-webkit-slider-thumb {
             appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background: #fff;
-            cursor: pointer;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin-top: -6px; /* center on track */
         }
-
+        input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; }
+        
+        /* Thumb Colors */
         #slider-red::-webkit-slider-thumb { background: var(--accent-red); }
         #slider-green::-webkit-slider-thumb { background: var(--accent-green); }
         #slider-time::-webkit-slider-thumb { background: var(--accent-blue); }
         #slider-chaos::-webkit-slider-thumb { background: #e0e0e0; }
 
-        button {
+        /* Buttons */
+        .btn-group { display: flex; align-items: center; gap: 10px; }
+        
+        button.action-btn {
             background: var(--panel-bg);
             color: var(--text-color);
             border: 1px solid #333855;
             padding: 8px 16px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
-            white-space: nowrap;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
             text-transform: uppercase;
-            height: 36px;
+            transition: all 0.2s;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        button:hover { background: #232845; }
-        button:active { transform: scale(0.96); }
+        button.action-btn:hover { background: #232845; border-color: #4d5470; }
+        button.action-btn:active { transform: scale(0.96); }
 
         .icon-btn {
             background: transparent;
             border: none;
-            font-size: 20px;
-            padding: 4px;
-            margin-left: 10px;
+            padding: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .icon-btn.active { color: var(--accent-blue); text-shadow: 0 0 10px var(--accent-blue); }
+        .icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
+        .icon-btn:hover { color: var(--text-color); }
+        .icon-btn.active { color: var(--accent-blue); }
 
-        /* --- Game Area --- */
+        /* Toggle Switch for Multi-Mode */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .toggle-switch {
+            width: 36px; height: 20px;
+            background: #333855;
+            border-radius: 20px;
+            position: relative;
+            transition: background 0.3s;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 16px; height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        input[type="checkbox"]:checked + .toggle-switch { background: var(--accent-blue); }
+        input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(16px); }
+
+        /* --- HERO / GAME SECTION --- */
+        #hero-section {
+            position: relative;
+            width: 100%;
+            height: 85vh; /* Takes up most of the screen */
+            min-height: 500px;
+            background: #05060a;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 4px solid #1a1d2e; /* Divider */
+        }
+
         #game-wrapper {
             flex: 1;
             position: relative;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            height: 100%;
-            background: #05060a;
         }
 
         canvas {
             display: block;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
             max-width: 100%;
             max-height: 100%;
-            box-shadow: 0 0 80px rgba(0,0,0,0.6); 
         }
 
-        /* --- Graph Overlay --- */
-        #graph-container {
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 60px;
-            pointer-events: none;
-            opacity: 0.8;
-            max-width: 90%;
-        }
-
-        /* --- Overlays (Result & FAQ) --- */
-        .overlay-modal {
+        /* --- OVERLAYS --- */
+        #overlay-result {
             position: absolute;
             inset: 0;
-            background: rgba(11, 13, 22, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(11, 13, 22, 0.9);
+            backdrop-filter: blur(5px);
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
+            z-index: 50;
             animation: fadeIn 0.3s ease;
-            padding: 20px;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        h2 { font-size: 2.5rem; margin: 0 0 10px 0; letter-spacing: -1px; text-transform: uppercase; }
-        .subtitle { font-size: 1.1rem; color: #889; margin-bottom: 30px; }
-
-        /* FAQ Specific Styles */
-        #overlay-faq { justify-content: flex-start; padding-top: 60px; overflow-y: auto; }
-        .faq-container { max-width: 800px; width: 100%; }
-        .faq-item { margin-bottom: 24px; border-bottom: 1px solid #2a2d40; padding-bottom: 16px; }
-        .faq-question { font-size: 1.2rem; color: var(--accent-blue); margin-bottom: 8px; font-weight: bold; }
-        .faq-answer { font-size: 0.95rem; color: #ccc; line-height: 1.5; }
-        .close-modal-btn { 
-            position: absolute; top: 20px; right: 20px; 
-            font-size: 24px; background: none; border: none; color: #fff; cursor: pointer;
+        #timer-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.05);
+            pointer-events: none;
+            z-index: 5;
         }
 
-        /* --- Side Menu --- */
+        /* --- SEO & FAQ CONTENT SECTION --- */
+        #content-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 24px;
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .seo-header { margin-bottom: 40px; text-align: left; }
+        .seo-header h2 { font-size: 2.5rem; color: #fff; margin-bottom: 16px; }
+        .seo-grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
+        
+        .info-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #2a2d40;
+            padding: 30px;
+            border-radius: 12px;
+        }
+        .info-card h3 { color: var(--accent-blue); margin-bottom: 12px; font-size: 1.2rem; }
+        
+        .ad-container {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(255,255,255,0.01);
+            border: 1px dashed #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            border-radius: 8px;
+            color: #444;
+            font-size: 0.9rem;
+        }
+
+        /* --- SIDE MENU --- */
         #side-menu {
             position: fixed;
             top: 0; right: -320px;
@@ -229,16 +285,17 @@
             height: 100%;
             background: #111420;
             border-left: 1px solid #2a2d40;
-            z-index: 30;
+            z-index: 200;
             transition: right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             display: flex;
             flex-direction: column;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
         #side-menu.open { right: 0; }
-
+        
         .menu-header {
             padding: 20px;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid #2a2d40;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -246,47 +303,35 @@
         .menu-content { padding: 20px; overflow-y: auto; flex: 1; }
 
         .score-entry {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 6px;
-            margin-bottom: 8px;
-            font-size: 13px;
-            border-left: 3px solid transparent;
+            display: flex; justify-content: space-between; padding: 10px;
+            background: rgba(255,255,255,0.03); border-radius: 4px;
+            margin-bottom: 8px; font-size: 12px; border-left: 3px solid transparent;
         }
         .score-entry.win-green { border-left-color: var(--accent-green); }
         .score-entry.win-red { border-left-color: var(--accent-red); }
-        .score-val { font-weight: bold; }
 
-        /* --- Timer Display --- */
-        #timer-display {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 40px;
-            font-weight: 800;
-            color: rgba(255,255,255,0.1);
-            pointer-events: none;
+        /* Responsive */
+        @media (min-width: 768px) {
+            .seo-grid { grid-template-columns: 1fr 1fr; }
+            .full-width-card { grid-column: span 2; }
         }
-        #timer-display.low { color: rgba(255, 92, 92, 0.2); }
-
         @media (max-width: 600px) {
-            header { height: auto; flex-wrap: wrap; padding: 12px; gap: 12px; }
-            .controls-group { width: 100%; justify-content: space-between; overflow:visible; }
-            .slider-container { width: 22%; min-width: auto; }
+            header { padding: 10px; gap: 10px; }
+            .controls-group { width: 100%; gap: 10px; justify-content: space-between; }
+            .slider-container { min-width: 45%; max-width: 48%; }
+            #timer-display { font-size: 2.5rem; top: 10px; }
+            .btn-group { width: 100%; justify-content: space-between; margin-top: 5px; }
         }
-
     </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
     <div class="controls-group">
         <div class="slider-container">
             <div class="slider-label">
-                <span style="color:var(--accent-red)">Break</span>
+                <span style="color:var(--accent-red)">Breaker</span>
                 <span id="val-red">1.0x</span>
             </div>
             <input type="range" id="slider-red" min="100" max="800" value="400" step="10">
@@ -294,7 +339,7 @@
 
         <div class="slider-container">
             <div class="slider-label">
-                <span style="color:var(--accent-green)">Build</span>
+                <span style="color:var(--accent-green)">Builder</span>
                 <span id="val-green">1.0x</span>
             </div>
             <input type="range" id="slider-green" min="100" max="800" value="400" step="10">
@@ -317,74 +362,116 @@
         </div>
     </div>
 
-    <div style="display:flex; align-items:center;">
-        <button id="btn-faq-toggle" style="margin-right: 10px;">FAQ</button>
-        <button class="icon-btn" id="btn-sound" title="Toggle Sound">矧</button>
-        <button id="btn-reset" style="margin-left: 10px;">Reset</button>
-        <button class="icon-btn" id="btn-menu">醇</button>
+    <div class="btn-group">
+        <!-- Multi-Brick Toggle -->
+        <label class="toggle-wrapper" title="Balls break/build multiple bricks at once">
+            <input type="checkbox" id="check-multi" style="display:none;">
+            <div class="toggle-switch"></div>
+            <span>Multi</span>
+        </label>
+
+        <button class="icon-btn" id="btn-sound" title="Toggle Sound">
+            <!-- SVG Speaker Icon -->
+            <svg viewBox="0 0 24 24">
+                <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+                <path id="sound-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" style="display:none;"/>
+                <line id="sound-off" x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" />
+            </svg>
+        </button>
+
+        <button class="action-btn" id="btn-reset">Restart</button>
+        
+        <button class="icon-btn" id="btn-menu" title="History">
+            <!-- SVG Menu Icon -->
+            <svg viewBox="0 0 24 24">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+            </svg>
+        </button>
     </div>
 </header>
 
-<div id="game-wrapper">
-    <div id="timer-display">60</div>
-    <canvas id="gameCanvas"></canvas>
-    <canvas id="graph-container"></canvas>
-    
-    <div id="overlay-result" class="overlay-modal">
-        <h2 id="result-title">Title</h2>
-        <div class="subtitle" id="result-desc">Description</div>
-        <button id="btn-play-again" style="padding: 12px 30px; font-size:14px; background: var(--accent-blue); border:none; color:white;">Play Again</button>
-    </div>
-
-    <div id="overlay-faq" class="overlay-modal">
-        <button class="close-modal-btn" id="btn-close-faq">ﾃ/button>
-        <h2>About & FAQ</h2>
-        <div class="subtitle">Frequently Asked Questions</div>
-        
-        <div class="faq-container">
-            <div class="faq-item">
-                <div class="faq-question">What is Make-or-Break?</div>
-                <div class="faq-answer">Make-or-Break is an interactive simulation game where two forces compete: the Builder (Green), who constructs and repairs, and the Breaker (Red), who seeks to dismantle the grid. It visualizes the balance between order and chaos.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">How do the sliders work?</div>
-                <div class="faq-answer">
-                    <ul>
-                        <li><strong style="color:var(--accent-red)">Break/Build:</strong> Adjusts the movement speed of the respective agents.</li>
-                        <li><strong style="color:var(--accent-blue)">Time:</strong> Sets the duration of the match.</li>
-                        <li><strong>Chaos:</strong> Adds randomness to the agents' trajectories, simulating unpredictable environmental factors.</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">How is the winner decided?</div>
-                <div class="faq-answer">When the timer hits zero, the simulation calculates the percentage of the grid that is active (green). If more than 50% of the grid is active, the Builder wins. Otherwise, the Breaker takes the victory.</div>
-            </div>
-             <div class="faq-item">
-                <div class="faq-question">Is this game free to play?</div>
-                <div class="faq-answer">Yes, this is a free browser-based physics game.</div>
-            </div>
+<!-- HERO GAME SECTION -->
+<div id="hero-section">
+    <div id="game-wrapper">
+        <div id="timer-display">60</div>
+        <canvas id="gameCanvas"></canvas>
+        <!-- Overlay Result -->
+        <div id="overlay-result">
+            <h2 id="result-title" style="color:#fff; font-size:3rem; margin-bottom:10px;">GAME OVER</h2>
+            <div id="result-desc" style="font-size:1.2rem; color:#aaa; margin-bottom:30px;">Result description here</div>
+            <button class="action-btn" id="btn-play-again" style="background:var(--accent-blue); border:none; color:white; padding:12px 30px;">Play Again</button>
         </div>
-        <div style="margin-top:20px; width: 100%; text-align: center; color: #555; border: 1px dashed #333; padding: 20px;">
-            <small>Advertisement</small>
-            </div>
     </div>
 </div>
 
+<!-- SEO / CONTENT SECTION -->
+<article id="content-section">
+    <div class="seo-header">
+        <h2>Order vs. Chaos: The Simulation</h2>
+        <p>Welcome to Make-or-Break, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
+    </div>
+
+    <div class="seo-grid">
+        <div class="info-card">
+            <h3>How It Works</h3>
+            <p>Two autonomous agents roam the grid. The <strong>Red Breaker</strong> seeks to destroy, turning active cells dark. The <strong>Green Builder</strong> seeks to repair, illuminating the void. You act as the god of this universe, controlling their speed, the flow of time, and the randomness (chaos) of their paths.</p>
+        </div>
+
+        <div class="info-card">
+            <h3>New: Multi-Mode</h3>
+            <p>Turn on "Multi" in the header to enable splash damage. In this mode, collisions impact not just one cell, but the entire surrounding cluster. This drastically speeds up the simulation and creates fascinating organic patterns on the grid.</p>
+        </div>
+
+        <!-- AdSense Unit -->
+        <div class="full-width-card">
+            <div class="ad-container">
+                <!-- Google AdSense Code -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-4315629123147124"
+                     data-ad-slot="1234567890"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+                <span style="position:absolute; font-size:10px; opacity:0.5;">Advertisement</span>
+            </div>
+        </div>
+
+        <div class="info-card full-width-card">
+            <h3>The Philosophy</h3>
+            <p>Notice how easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
+        </div>
+
+        <div class="info-card">
+            <h3>FAQ: Winning</h3>
+            <p>The timer at the top counts down the entropy war. If the grid is more than 50% Green (Active) when time runs out, Order prevails. If Red dominates, Chaos wins.</p>
+        </div>
+        
+        <div class="info-card">
+            <h3>FAQ: Controls</h3>
+            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Speed</strong> sliders to handicap or boost specific agents.</p>
+        </div>
+    </div>
+</article>
+
+<!-- SIDE MENU -->
 <div id="side-menu">
     <div class="menu-header">
         <h3>Match History</h3>
-        <button class="icon-btn" id="btn-close-menu">ﾃ/button>
+        <button class="icon-btn" id="btn-close-menu">✕</button>
     </div>
     <div class="menu-content">
-        <button id="btn-clear-history" style="width:100%; margin-bottom:15px; background: #2a1a1a; color: #ff5c5c; border-color: #442222;">Clear History</button>
+        <button class="action-btn" id="btn-clear-history" style="width:100%; margin-bottom:15px; background:#2a1a1a; color:#ff5c5c; border-color:#522;">Clear History</button>
         <div id="history-list"></div>
     </div>
 </div>
 
+<!-- JAVASCRIPT -->
 <script>
-/**
- * AUDIO ENGINE (Feature 2)
+/** * AUDIO ENGINE
+ * Simple oscillator-based audio for feedback
  */
 const AudioEngine = {
     ctx: null,
@@ -409,68 +496,69 @@ const AudioEngine = {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         
-        // Pentatonic Scale roughly mapped
-        const baseFreq = type === 'breaker' ? 150 : 300;
-        const freq = baseFreq + (heightPct * 600); // Higher bricks = Higher pitch
+        // Sound Profile: Breaker is lower/sawtooth, Builder is higher/sine
+        const baseFreq = type === 'breaker' ? 100 : 300;
+        const freq = baseFreq + (heightPct * 500); 
         
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
         osc.type = type === 'breaker' ? 'sawtooth' : 'sine';
         
-        // Envelope
-        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+        // Quick decay envelope
+        const vol = type === 'breaker' ? 0.04 : 0.03;
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
         
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.15);
+        osc.stop(this.ctx.currentTime + 0.1);
     }
 };
 
 /**
- * ENGINE CORE
- * Make-or-Break Simulation
+ * GAME ENGINE
  */
 const LOGICAL_WIDTH = 800;
 const LOGICAL_HEIGHT = 600;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', { alpha: false });
-const graphCanvas = document.getElementById('graph-container');
-const graphCtx = graphCanvas.getContext('2d');
 
 // DOM Elements
 const sliderRed = document.getElementById('slider-red');
 const sliderGreen = document.getElementById('slider-green');
 const sliderTime = document.getElementById('slider-time');
 const sliderChaos = document.getElementById('slider-chaos');
+const checkMulti = document.getElementById('check-multi');
+
 const labelRed = document.getElementById('val-red');
 const labelGreen = document.getElementById('val-green');
 const labelTime = document.getElementById('val-time');
 const labelChaos = document.getElementById('val-chaos');
 const timerDisplay = document.getElementById('timer-display');
 const overlayResult = document.getElementById('overlay-result');
-const overlayFaq = document.getElementById('overlay-faq');
-const btnSound = document.getElementById('btn-sound');
+const resultTitle = document.getElementById('result-title');
+const resultDesc = document.getElementById('result-desc');
 
 // State
 const state = {
     running: true,
     gameOver: false,
-    stats: { red: 0, green: 0 },
     timeLeft: 60,
-    totalTime: 60,
-    historyGraph: [], // For Feature 3
     lastFrameTime: 0
 };
 
-// Physics Objects
 let balls = [];
 let bricks = [];
+let rows = 14;
+let cols = 20;
+let brickW = 0;
+let brickH = 18;
+let brickPad = 5;
 
 /**
- * INIT & RESIZE
+ * INITIALIZATION
  */
 function init() {
     resize();
@@ -485,35 +573,28 @@ function resize() {
     let w = wrapper.clientWidth;
     let h = wrapper.clientHeight;
     
+    // Fit within container maintaining aspect ratio
     if (w / h > aspect) w = h * aspect;
     else h = w / aspect;
 
+    // Set canvas display size
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     
-    // Graph Overlay Sizing
-    graphCanvas.width = 600;
-    graphCanvas.height = 60;
-    
+    // Set actual resolution
     const dpr = window.devicePixelRatio || 1;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     
+    // Normalize coordinate system
     ctx.scale(dpr * (w/LOGICAL_WIDTH), dpr * (h/LOGICAL_HEIGHT));
 }
 
 function resetSimulation() {
     state.gameOver = false;
     state.running = true;
-    state.stats = { red: 0, green: 0 };
-    state.historyGraph = []; // Reset Graph
-    
-    // Timer Setup
-    state.totalTime = parseInt(sliderTime.value);
-    state.timeLeft = state.totalTime;
+    state.timeLeft = parseInt(sliderTime.value);
     timerDisplay.innerText = state.timeLeft;
-    timerDisplay.className = '';
-    
     overlayResult.style.display = 'none';
 
     initBricks();
@@ -522,21 +603,18 @@ function resetSimulation() {
 
 function initBricks() {
     bricks = [];
-    const rows = 14; 
-    const cols = 20;
-    const padding = 5;
-    const w = (LOGICAL_WIDTH - (padding * (cols + 1))) / cols;
-    const h = 18;
-    const startY = 80;
+    brickW = (LOGICAL_WIDTH - (brickPad * (cols + 1))) / cols;
+    const startY = 80; // Leave room for timer
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            // 25% Active start rate
-            const active = Math.random() < 0.25; 
+            // 30% Active start rate
+            const active = Math.random() < 0.3; 
             bricks.push({
-                x: padding + c * (w + padding),
-                y: startY + r * (h + padding),
-                w: w, h: h,
+                r: r, c: c, // Grid coords for neighbor lookup
+                x: brickPad + c * (brickW + brickPad),
+                y: startY + r * (brickH + brickPad),
+                w: brickW, h: brickH,
                 active: active
             });
         }
@@ -545,15 +623,13 @@ function initBricks() {
 
 function initBalls() {
     balls = [];
-    // 2 Agents: Red (Break) and Green (Build)
-    balls.push(createBall(LOGICAL_WIDTH/2 - 100, LOGICAL_HEIGHT - 100, '#ff5c5c', 'breaker'));
-    balls.push(createBall(LOGICAL_WIDTH/2 + 100, LOGICAL_HEIGHT - 100, '#4dff88', 'builder'));
+    balls.push(createBall(LOGICAL_WIDTH*0.3, LOGICAL_HEIGHT - 100, '#ff5c5c', 'breaker'));
+    balls.push(createBall(LOGICAL_WIDTH*0.7, LOGICAL_HEIGHT - 100, '#4dff88', 'builder'));
 }
 
 function createBall(x, y, color, type) {
     const angle = Math.random() * Math.PI * 2;
     const initialSpeed = type === 'breaker' ? parseInt(sliderRed.value) : parseInt(sliderGreen.value);
-    
     return {
         x: x, y: y, r: 10,
         vx: Math.cos(angle) * initialSpeed,
@@ -565,7 +641,7 @@ function createBall(x, y, color, type) {
 }
 
 /**
- * GAME LOOP
+ * PHYSICS LOOP
  */
 function gameLoop(timestamp) {
     if (!state.lastFrameTime) state.lastFrameTime = timestamp;
@@ -573,7 +649,7 @@ function gameLoop(timestamp) {
     state.lastFrameTime = timestamp;
 
     if (state.running && !state.gameOver) {
-        update(Math.min(dt, 0.1)); 
+        update(Math.min(dt, 0.1)); // Cap dt to prevent skipping
     }
     
     draw();
@@ -581,39 +657,27 @@ function gameLoop(timestamp) {
 }
 
 function update(dt) {
-    // 1. Timer Logic
+    // Timer
     state.timeLeft -= dt;
     timerDisplay.innerText = Math.ceil(state.timeLeft);
-    
-    if (state.timeLeft <= 10) timerDisplay.className = 'low';
-    
     if (state.timeLeft <= 0) {
         state.timeLeft = 0;
         endGame();
     }
 
-    // 2. Sliders & Logic Update
+    // Update UI Labels
     const redSpeed = parseInt(sliderRed.value);
     const greenSpeed = parseInt(sliderGreen.value);
-    const setTime = parseInt(sliderTime.value);
-    const chaosVal = parseInt(sliderChaos.value); // Feature 1: Chaos
+    const chaosVal = parseInt(sliderChaos.value);
     
     labelRed.innerText = (redSpeed/400).toFixed(1) + 'x';
     labelGreen.innerText = (greenSpeed/400).toFixed(1) + 'x';
-    labelTime.innerText = setTime + 's';
+    labelTime.innerText = parseInt(sliderTime.value) + 's';
     labelChaos.innerText = chaosVal + '%';
 
-    // 3. Graph Data Collection (Every 0.5s approx, or just every frame throttled)
-    if (Math.random() < 0.05) { // Simple sampling
-        const total = bricks.length;
-        const active = bricks.filter(b => b.active).length;
-        state.historyGraph.push(active / total);
-        if (state.historyGraph.length > 200) state.historyGraph.shift();
-    }
-
-    // 4. Ball Physics
+    // Ball Physics
     balls.forEach(b => {
-        // Adjust speed
+        // Speed Governance
         const targetSpeed = b.type === 'breaker' ? redSpeed : greenSpeed;
         const currentV = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
         if (Math.abs(currentV - targetSpeed) > 1) {
@@ -622,49 +686,80 @@ function update(dt) {
             b.vy *= scale;
         }
 
-        // Apply Chaos (Feature 1)
+        // Chaos (Random Jitter)
         if (chaosVal > 0 && Math.random() < 0.05) {
-            b.vx += (Math.random() - 0.5) * chaosVal * 10;
-            b.vy += (Math.random() - 0.5) * chaosVal * 10;
+            b.vx += (Math.random() - 0.5) * chaosVal * 15;
+            b.vy += (Math.random() - 0.5) * chaosVal * 15;
         }
 
+        // Move
         b.x += b.vx * dt;
         b.y += b.vy * dt;
 
-        // Trail Logic
+        // Trail Update
         b.trail.unshift({x: b.x, y: b.y, age: 0});
-        if (b.trail.length > 25) b.trail.pop();
+        if (b.trail.length > 25) b.trail.pop(); // Slightly longer trail for the jet look
         b.trail.forEach(t => t.age += dt);
 
-        // Wall Collisions
+        // Wall Collision
         if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
         if (b.x + b.r > LOGICAL_WIDTH) { b.x = LOGICAL_WIDTH - b.r; b.vx *= -1; }
         if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
         if (b.y + b.r > LOGICAL_HEIGHT) { b.y = LOGICAL_HEIGHT - b.r; b.vy *= -1; }
 
-        // Brick Collision
+        // Brick Interaction
         checkBrickCollision(b);
     });
 }
 
 function checkBrickCollision(ball) {
+    // Optimization: Only check if ball is in brick area
     if (ball.y < 50 || ball.y > LOGICAL_HEIGHT - 50) return;
 
-    // Standard Grid Collision (Optimized)
-    for (let brick of bricks) {
+    for (let i = 0; i < bricks.length; i++) {
+        let brick = bricks[i];
+        
+        // Logical check: Can this ball affect this brick?
         const canInteract = (brick.active && ball.type === 'breaker') || (!brick.active && ball.type === 'builder');
 
         if (canInteract && rectCircleIntersect(brick, ball)) {
-            resolveCollision(ball, brick);
-            brick.active = !brick.active; // Toggle
+            // Physics Bounce - ONLY IF NOT in Multi Mode
+            if (!checkMulti.checked) {
+                resolveCollision(ball, brick);
+            }
             
-            // Feature 2: Audio Feedback
-            const heightPct = 1 - (brick.y / LOGICAL_HEIGHT); // 0 to 1
+            // Gameplay Effect
+            if (checkMulti.checked) {
+                // Multi-Mode: Affect neighbors + self
+                triggerBrick(brick, ball.type); // Center
+                // Find neighbors
+                getNeighbors(brick).forEach(n => triggerBrick(n, ball.type));
+            } else {
+                // Single Mode
+                triggerBrick(brick, ball.type);
+            }
+            
+            // Sound
+            const heightPct = 1 - (brick.y / LOGICAL_HEIGHT);
             AudioEngine.playTone(heightPct, ball.type);
 
-            break; 
+            break; // Only hit one cluster per frame
         }
     }
+}
+
+function triggerBrick(brick, type) {
+    if (type === 'breaker') brick.active = false;
+    else brick.active = true;
+}
+
+function getNeighbors(brick) {
+    // Simple neighbor lookup in grid
+    return bricks.filter(b => {
+        const dr = Math.abs(b.r - brick.r);
+        const dc = Math.abs(b.c - brick.c);
+        return (dr <= 1 && dc <= 1) && !(dr === 0 && dc === 0);
+    });
 }
 
 function resolveCollision(b, rect) {
@@ -708,208 +803,159 @@ function endGame() {
     const total = bricks.length;
     const greenPct = (active / total * 100).toFixed(1);
     const redPct = ((total - active) / total * 100).toFixed(1);
-
     const builderWon = active > (total / 2);
-    
-    // Save
-    const result = {
+
+    // Save History
+    saveHistory({
         winner: builderWon ? 'Builder' : 'Breaker',
         green: greenPct,
         red: redPct,
         date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    };
-    saveHistory(result);
+    });
 
-    // Show Overlay
-    const title = document.getElementById('result-title');
-    const desc = document.getElementById('result-desc');
-    
+    // UI Update
     if (builderWon) {
-        title.innerHTML = "<span style='color:var(--accent-green)'>Builder Wins!</span>";
-        desc.innerText = `The Builders secured ${greenPct}% of the grid.`;
+        resultTitle.innerHTML = `<span style="color:var(--accent-green)">Builder Wins!</span>`;
+        resultDesc.innerHTML = `Order restored. ${greenPct}% of the grid is active.`;
     } else {
-        title.innerHTML = "<span style='color:var(--accent-red)'>Breaker Wins!</span>";
-        desc.innerText = `Chaos reigns! Only ${greenPct}% of the grid remains.`;
+        resultTitle.innerHTML = `<span style="color:var(--accent-red)">Breaker Wins!</span>`;
+        resultDesc.innerHTML = `Entropy reigns. Only ${greenPct}% of the grid survived.`;
     }
-    
     overlayResult.style.display = 'flex';
 }
 
 /**
- * DRAWING
+ * RENDERING
  */
 function draw() {
+    // Clear & Background
     ctx.fillStyle = '#0b0d16';
     ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
-    // Get Ball Positions for Proximity Glow
+    // Get Ball Positions for Glow Math
     const redBall = balls.find(b => b.type === 'breaker');
     const greenBall = balls.find(b => b.type === 'builder');
 
     // Draw Bricks
     bricks.forEach(b => {
-        let distRed = Math.hypot(b.x + b.w/2 - redBall.x, b.y + b.h/2 - redBall.y);
-        let distGreen = Math.hypot(b.x + b.w/2 - greenBall.x, b.y + b.h/2 - greenBall.y);
-        
-        const proximityThreshold = 150;
-        
-        // Default Logic
+        // Calculate distance to balls for dynamic lighting
+        const distRed = Math.hypot(b.x + b.w/2 - redBall.x, b.y + b.h/2 - redBall.y);
+        const distGreen = Math.hypot(b.x + b.w/2 - greenBall.x, b.y + b.h/2 - greenBall.y);
+        const threshold = 120;
+
         if (b.active) {
-            // White Brick
+            // Alive Brick
             ctx.fillStyle = '#ffffff';
             ctx.shadowBlur = 0;
-
-            // Red Approach Glow (Threat)
-            if (distRed < proximityThreshold) {
-                const alpha = 1 - (distRed / proximityThreshold);
+            
+            // Red Threat Glow
+            if (distRed < threshold) {
+                const alpha = 1 - (distRed / threshold);
                 ctx.shadowColor = '#ff5c5c';
                 ctx.shadowBlur = 20 * alpha;
-                ctx.fillStyle = `rgb(255, ${255 * (1-alpha)}, ${255 * (1-alpha)})`; // Tint red
+                ctx.fillStyle = `rgb(255, ${200 * (1-alpha)}, ${200 * (1-alpha)})`;
             }
-            
             ctx.fillRect(b.x, b.y, b.w, b.h);
-            
-            // Subtle 3D top bevel
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.fillRect(b.x, b.y, b.w, 4);
-
         } else {
-            // Empty Slot (Broken)
-            // Green Approach Glow (Opportunity)
-            if (distGreen < proximityThreshold) {
-                const alpha = 1 - (distGreen / proximityThreshold);
+            // Dead Brick (Outline)
+            if (distGreen < threshold) {
+                // Green Opportunity Glow
+                const alpha = 1 - (distGreen / threshold);
+                ctx.strokeStyle = `rgba(77, 255, 136, ${alpha})`;
                 ctx.shadowColor = '#4dff88';
                 ctx.shadowBlur = 15 * alpha;
-                ctx.strokeStyle = `rgba(77, 255, 136, ${alpha})`;
                 ctx.lineWidth = 2;
                 ctx.strokeRect(b.x, b.y, b.w, b.h);
             } else {
                 ctx.strokeStyle = '#1a1d2e';
+                ctx.shadowBlur = 0;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(b.x + 2, b.y + 2, b.w - 4, b.h - 4);
             }
         }
-        ctx.shadowBlur = 0; // Reset
+        ctx.shadowBlur = 0;
     });
 
-    // Balls & Trails
+    // Draw Balls
     balls.forEach(b => {
-        // Draw Trail
+        // NEW TRAIL RENDERING (Jet-like)
         if (b.trail.length > 1) {
-            // Fading trail path
+            // Draw many small circles or line segments with decreasing opacity/width
+            // We iterate from 0 (head) to end (tail)
             for(let i=0; i<b.trail.length-1; i++) {
                 const pt = b.trail[i];
                 const next = b.trail[i+1];
-                const opacity = 1 - (i / b.trail.length); // Fade out tail
-                const size = b.r * opacity;
-
+                
+                // Ratio goes from 0 (head) to 1 (tail)
+                const ratio = i / b.trail.length;
+                
                 ctx.beginPath();
                 ctx.moveTo(pt.x, pt.y);
                 ctx.lineTo(next.x, next.y);
+                
                 ctx.strokeStyle = b.color;
-                ctx.globalAlpha = opacity * 0.4;
-                ctx.lineWidth = size * 1.5;
+                // Jet Effect: Width shrinks rapidly, Opacity fades
+                ctx.lineWidth = b.r * (1 - ratio); 
                 ctx.lineCap = 'round';
+                
+                // Add a glow to the start of the trail
+                if (i < 5) {
+                    ctx.shadowColor = b.color;
+                    ctx.shadowBlur = 10;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                // Opacity fades out
+                ctx.globalAlpha = (1 - ratio) * 0.6; 
                 ctx.stroke();
             }
             ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
         }
 
-        // Draw Ball
+        // Body
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         ctx.fillStyle = b.color;
         ctx.shadowColor = b.color;
-        ctx.shadowBlur = 25;
+        ctx.shadowBlur = 20;
         ctx.fill();
+        ctx.shadowBlur = 0;
         
-        // Inner white highlight for "sphere" look
+        // Highlight
         ctx.beginPath();
         ctx.arc(b.x - 3, b.y - 3, b.r/3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
         ctx.fill();
     });
 
-    drawHUD();
-    drawGraph(); // Feature 3
+    // Progress Bar (Bottom)
+    drawProgressBar();
 }
 
-// Feature 3: Live History Graph
-function drawGraph() {
-    graphCtx.clearRect(0, 0, 600, 60);
-    
-    if (state.historyGraph.length < 2) return;
-    
-    graphCtx.beginPath();
-    const step = 600 / state.historyGraph.length;
-    
-    // Draw Area under curve (Green)
-    graphCtx.moveTo(0, 60);
-    state.historyGraph.forEach((pct, i) => {
-        const y = 60 - (pct * 60);
-        graphCtx.lineTo(i * step, y);
-    });
-    graphCtx.lineTo(state.historyGraph.length * step, 60);
-    graphCtx.fillStyle = 'rgba(77, 255, 136, 0.2)';
-    graphCtx.fill();
-    
-    // Draw Line
-    graphCtx.beginPath();
-    state.historyGraph.forEach((pct, i) => {
-        const y = 60 - (pct * 60);
-        if (i===0) graphCtx.moveTo(0, y);
-        else graphCtx.lineTo(i * step, y);
-    });
-    graphCtx.strokeStyle = '#4dff88';
-    graphCtx.lineWidth = 2;
-    graphCtx.stroke();
-}
-
-function drawHUD() {
-    // Bottom Bar
-    const barHeight = 8;
-    const barY = LOGICAL_HEIGHT - 30;
-    const barMargin = 100;
-    const barWidth = LOGICAL_WIDTH - (barMargin * 2);
-
-    // Stats
+function drawProgressBar() {
+    const barH = 6;
     const total = bricks.length;
     const active = bricks.filter(b => b.active).length;
-    const greenPct = active / total;
+    const greenW = (active / total) * LOGICAL_WIDTH;
 
-    // Background (Red)
+    // Red Base
     ctx.fillStyle = '#ff5c5c';
-    ctx.shadowColor = '#ff5c5c';
-    ctx.shadowBlur = 10;
-    ctx.fillRect(barMargin, barY, barWidth, barHeight);
+    ctx.fillRect(0, LOGICAL_HEIGHT - barH, LOGICAL_WIDTH, barH);
     
-    // Foreground (Green)
+    // Green Overlay
     ctx.fillStyle = '#4dff88';
     ctx.shadowColor = '#4dff88';
     ctx.shadowBlur = 10;
-    ctx.fillRect(barMargin, barY, barWidth * greenPct, barHeight);
-    
+    ctx.fillRect(0, LOGICAL_HEIGHT - barH, greenW, barH);
     ctx.shadowBlur = 0;
-
-    // Text
-    ctx.font = 'bold 16px system-ui';
-    ctx.textBaseline = 'middle';
-    
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#ff5c5c';
-    ctx.fillText(`${((1-greenPct)*100).toFixed(0)}%`, barMargin - 15, barY + 4);
-
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#4dff88';
-    ctx.fillText(`${(greenPct*100).toFixed(0)}%`, barMargin + barWidth + 15, barY + 4);
 }
 
-
 /**
- * PERSISTENCE & HISTORY
+ * PERSISTENCE
  */
-const STORAGE_KEY = 'bvb_history_v2';
+const STORAGE_KEY = 'mob_history_v1';
 
 function saveHistory(entry) {
     let hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -932,12 +978,11 @@ function renderHistory() {
         const winClass = h.winner === 'Builder' ? 'win-green' : 'win-red';
         return `
         <div class="score-entry ${winClass}">
-            <div style="color:#aaa">${h.date}</div>
-            <div class="score-val" style="color:${h.winner==='Builder'?'var(--accent-green)':'var(--accent-red)'}">
+            <span style="color:#aaa">${h.date}</span>
+            <span style="font-weight:bold; color:${h.winner==='Builder'?'var(--accent-green)':'var(--accent-red)'}">
                 ${h.winner} (${h.winner==='Builder'?h.green:h.red}%)
-            </div>
-        </div>
-        `;
+            </span>
+        </div>`;
     }).join('');
 }
 
@@ -947,35 +992,35 @@ document.getElementById('btn-clear-history').onclick = () => {
 };
 
 /**
- * UI EVENTS
+ * UI BINDINGS
  */
-document.getElementById('btn-reset').onclick = () => resetSimulation();
-document.getElementById('btn-play-again').onclick = () => resetSimulation();
-document.getElementById('btn-sound').onclick = function() {
+document.getElementById('btn-reset').onclick = resetSimulation;
+document.getElementById('btn-play-again').onclick = resetSimulation;
+
+// Sound Toggle
+const btnSound = document.getElementById('btn-sound');
+const soundOn = document.getElementById('sound-waves');
+const soundOff = document.getElementById('sound-off');
+
+btnSound.onclick = () => {
     const enabled = AudioEngine.toggle();
-    this.style.opacity = enabled ? '1' : '0.5';
-    this.innerText = enabled ? '矧' : '這';
-    this.classList.toggle('active');
+    btnSound.classList.toggle('active');
+    soundOn.style.display = enabled ? 'block' : 'none';
+    soundOff.style.display = enabled ? 'none' : 'block';
 };
 
+// Menu Toggle
 const menu = document.getElementById('side-menu');
 document.getElementById('btn-menu').onclick = () => menu.classList.add('open');
 document.getElementById('btn-close-menu').onclick = () => menu.classList.remove('open');
 
-// FAQ Toggle Events
-document.getElementById('btn-faq-toggle').onclick = () => {
-    overlayFaq.style.display = 'flex';
-};
-document.getElementById('btn-close-faq').onclick = () => {
-    overlayFaq.style.display = 'none';
-};
-
+// Resize Listener
 window.addEventListener('resize', resize);
 
-// Start
+// Init
 renderHistory();
 init();
-
 </script>
+
 </body>
 </html>
