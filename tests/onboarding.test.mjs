@@ -24,7 +24,7 @@ after(async () => {
 });
 
 // onboarded: pretend the tour was already seen; blockStorage: make every localStorage access throw
-async function open({ onboarded = false, blockStorage = false } = {}) {
+async function open({ onboarded = false, blockStorage = false, query = '' } = {}) {
     const context = await browser.newContext();
     await context.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
     if (onboarded) await context.addInitScript(() => localStorage.setItem('mob_onboarded_v1', '1'));
@@ -38,7 +38,7 @@ async function open({ onboarded = false, blockStorage = false } = {}) {
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', e => errors.push(e));
-    await page.goto(base);
+    await page.goto(base + query);
     await page.waitForFunction(() => bricks.length > 0, null, { polling: 50 });
     return { page, context, errors };
 }
@@ -144,6 +144,19 @@ test('blocked storage: the tour still shows and Start still works', async () => 
     assert.ok(await visible(page, '#onboarding'));
     await page.click('#btn-onb-skip');
     await page.click('#btn-start');
+    assert.equal(await running(page), true);
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
+test('pressing Start on a challenge link keeps the shared grid', async () => {
+    const { page, context, errors } = await open({ onboarded: true, query: '?seed=abc123&time=30' });
+    const before = await page.evaluate(() => [state.seed, bricks.map(b => b.active ? 1 : 0).join('')]);
+    assert.equal(before[0], parseInt('abc123', 36));
+    await page.click('#btn-start');
+    const after = await page.evaluate(() => [state.seed, bricks.map(b => b.active ? 1 : 0).join('')]);
+    assert.deepEqual(after, before);
+    assert.equal(await page.evaluate(() => state.roundLength), 30);
     assert.equal(await running(page), true);
     assert.deepEqual(errors, []);
     await context.close();

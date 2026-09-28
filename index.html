@@ -2,22 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Make-or-Break: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
+    <meta name="description" content="Brickflux: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
     <meta name="keywords" content="simulation game, physics, stress relief, builder vs breaker, chaos theory, interactive art">
-    <title>Make-or-Break | Interactive Physics Simulation</title>
-
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124" crossorigin="anonymous"></script>
+    <title>Brickflux | Interactive Physics Simulation</title>
 
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "Make-or-Break Simulation",
+      "name": "Brickflux Simulation",
       "description": "An interactive physics simulation demonstrating the balance between creation and destruction.",
       "applicationCategory": "Game",
       "operatingSystem": "Any"
@@ -159,6 +156,7 @@
 
         /* Toggle Switch for Multi-Mode */
         .toggle-wrapper {
+            position: relative;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -186,6 +184,14 @@
         }
         input[type="checkbox"]:checked + .toggle-switch { background: var(--accent-blue); }
         input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(16px); }
+        /* Visually hidden but still focusable, so the Multi toggle works from the keyboard */
+        .toggle-wrapper input[type="checkbox"] {
+            position: absolute; width: 1px; height: 1px;
+            opacity: 0; margin: 0; pointer-events: none;
+        }
+        .toggle-wrapper input[type="checkbox"]:focus-visible + .toggle-switch,
+        input[type=range]:focus-visible,
+        .icon-btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
 
         /* --- HERO / GAME SECTION --- */
         #hero-section {
@@ -300,10 +306,36 @@
             transform: translateX(-50%);
             font-size: 4rem;
             font-weight: 800;
-            color: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.55);
+            text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+            font-variant-numeric: tabular-nums;
             pointer-events: none;
             z-index: 5;
         }
+
+        .result-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 0 16px; }
+        .result-actions .action-btn { padding: 12px 20px; }
+        .btn-primary { background: var(--accent-blue) !important; border: none !important; color: #fff !important; }
+
+        /* --- TOAST --- */
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translate(-50%, 20px);
+            max-width: calc(100% - 32px);
+            background: var(--panel-bg);
+            border: 1px solid #333855;
+            color: var(--text-color);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 300;
+        }
+        #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
         /* --- SEO & FAQ CONTENT SECTION --- */
         #content-section {
@@ -326,20 +358,6 @@
         }
         .info-card h3 { color: var(--accent-blue); margin-bottom: 12px; font-size: 1.2rem; }
         
-        .ad-container {
-            width: 100%;
-            min-height: 100px;
-            background: rgba(255,255,255,0.01);
-            border: 1px dashed #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 30px 0;
-            border-radius: 8px;
-            color: #444;
-            font-size: 0.9rem;
-        }
-
         /* --- SIDE MENU --- */
         #side-menu {
             position: fixed;
@@ -355,6 +373,14 @@
             box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
         #side-menu.open { right: 0; }
+        #menu-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 199;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #menu-backdrop.open { opacity: 1; pointer-events: auto; }
         
         .menu-header {
             padding: 20px;
@@ -397,7 +423,7 @@
                 <span style="color:var(--accent-red)">Breaker</span>
                 <span id="val-red">1.0x</span>
             </div>
-            <input type="range" id="slider-red" min="100" max="800" value="400" step="10">
+            <input type="range" id="slider-red" aria-label="Breaker speed" min="100" max="800" value="400" step="10">
         </div>
 
         <div class="slider-container">
@@ -405,7 +431,7 @@
                 <span style="color:var(--accent-green)">Builder</span>
                 <span id="val-green">1.0x</span>
             </div>
-            <input type="range" id="slider-green" min="100" max="800" value="400" step="10">
+            <input type="range" id="slider-green" aria-label="Builder speed" min="100" max="800" value="400" step="10">
         </div>
 
         <div class="slider-container">
@@ -413,7 +439,7 @@
                 <span style="color:var(--accent-blue)">Time</span>
                 <span id="val-time">60s</span>
             </div>
-            <input type="range" id="slider-time" min="10" max="120" value="60" step="5">
+            <input type="range" id="slider-time" aria-label="Round time" min="10" max="120" value="60" step="5">
         </div>
 
         <div class="slider-container">
@@ -421,32 +447,39 @@
                 <span style="color:#e0e0e0">Chaos</span>
                 <span id="val-chaos">0%</span>
             </div>
-            <input type="range" id="slider-chaos" min="0" max="50" value="0" step="5">
+            <input type="range" id="slider-chaos" aria-label="Chaos" min="0" max="50" value="0" step="5">
         </div>
     </div>
 
     <div class="btn-group">
         <!-- Multi-Brick Toggle -->
         <label class="toggle-wrapper" title="Balls break/build multiple bricks at once">
-            <input type="checkbox" id="check-multi" style="display:none;">
+            <input type="checkbox" id="check-multi">
             <div class="toggle-switch"></div>
             <span>Multi</span>
         </label>
 
-        <button class="icon-btn" id="btn-sound" title="Toggle Sound">
+        <button class="icon-btn" id="btn-sound" title="Toggle Sound" aria-label="Sound" aria-pressed="false">
             <!-- SVG Speaker Icon -->
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M11 5L6 9H2v6h4l5 4V5z"/>
                 <path id="sound-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" style="display:none;"/>
                 <line id="sound-off" x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" />
             </svg>
         </button>
 
+        <button class="icon-btn" id="btn-share" title="Share this round as a challenge" aria-label="Share this round as a challenge">
+            <!-- SVG Share Icon -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 1 0 15 5c0 .24.04.47.09.7L8.04 9.81A2.99 2.99 0 1 0 8.04 14.2l7.12 4.16c-.05.21-.08.43-.08.65A2.92 2.92 0 1 0 18 16.08z"/>
+            </svg>
+        </button>
+
         <button class="action-btn" id="btn-reset">Restart</button>
         
-        <button class="icon-btn" id="btn-menu" title="History">
+        <button class="icon-btn" id="btn-menu" title="History" aria-label="Match history" aria-controls="side-menu" aria-expanded="false">
             <!-- SVG Menu Icon -->
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
             </svg>
         </button>
@@ -498,8 +531,12 @@
         <!-- Overlay Result -->
         <div id="overlay-result">
             <h2 id="result-title" style="color:#fff; font-size:3rem; margin-bottom:10px;">GAME OVER</h2>
-            <div id="result-desc" style="font-size:1.2rem; color:#aaa; margin-bottom:30px;">Result description here</div>
-            <button class="action-btn" id="btn-play-again" style="background:var(--accent-blue); border:none; color:white; padding:12px 30px;">Play Again</button>
+            <div id="result-desc" style="font-size:1.2rem; color:#aaa; margin-bottom:30px; padding:0 16px; text-align:center;">Result description here</div>
+            <div class="result-actions">
+                <button class="action-btn btn-primary" id="btn-share-result">Share Challenge</button>
+                <button class="action-btn" id="btn-replay">Replay This Grid</button>
+                <button class="action-btn" id="btn-play-again">New Round</button>
+            </div>
         </div>
     </div>
 </div>
@@ -508,7 +545,7 @@
 <article id="content-section">
     <div class="seo-header">
         <h2>Order vs. Chaos: The Simulation</h2>
-        <p>Welcome to Make-or-Break, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
+        <p>Welcome to Brickflux, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
     </div>
 
     <div class="seo-grid">
@@ -522,26 +559,14 @@
             <p>Turn on "Multi" in the header to enable splash damage. In this mode, collisions impact not just one cell, but the entire surrounding cluster. This drastically speeds up the simulation and creates fascinating organic patterns on the grid.</p>
         </div>
 
-        <!-- AdSense Unit -->
-        <div class="full-width-card">
-            <div class="ad-container">
-                <!-- Google AdSense Code -->
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-4315629123147124"
-                     data-ad-slot="1234567890"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-                <span style="position:absolute; font-size:10px; opacity:0.5;">Advertisement</span>
-            </div>
+        <div class="info-card full-width-card">
+            <h3>The Philosophy</h3>
+            <p>Notice how much easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
         </div>
 
         <div class="info-card full-width-card">
-            <h3>The Philosophy</h3>
-            <p>Notice how easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
+            <h3>New: Share a Challenge</h3>
+            <p>Every round starts from a numbered grid. Press <strong>Share</strong> (or <strong>Share Challenge</strong> when a round ends) to copy a link with that exact starting grid and your slider settings. Whoever opens it plays the same round, and <strong>Replay This Grid</strong> lets you try it again with different settings.</p>
         </div>
 
         <div class="info-card">
@@ -551,22 +576,25 @@
         
         <div class="info-card">
             <h3>FAQ: Controls</h3>
-            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Speed</strong> sliders to handicap or boost specific agents.</p>
+            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Breaker</strong> and <strong>Builder</strong> sliders to handicap or boost specific agents.</p>
         </div>
     </div>
 </article>
 
 <!-- SIDE MENU -->
-<div id="side-menu">
+<div id="menu-backdrop"></div>
+<div id="side-menu" role="dialog" aria-label="Match history" inert>
     <div class="menu-header">
         <h3>Match History</h3>
-        <button class="icon-btn" id="btn-close-menu">✕</button>
+        <button class="icon-btn" id="btn-close-menu" aria-label="Close match history">✕</button>
     </div>
     <div class="menu-content">
         <button class="action-btn" id="btn-clear-history" style="width:100%; margin-bottom:15px; background:#2a1a1a; color:#ff5c5c; border-color:#522;">Clear History</button>
         <div id="history-list"></div>
     </div>
 </div>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <!-- JAVASCRIPT -->
 <script>
@@ -647,8 +675,34 @@ const state = {
     running: false,
     gameOver: false,
     timeLeft: 60,
-    lastFrameTime: 0
+    roundLength: 60,  // Round length in seconds, as set by the Time slider
+    elapsed: 0,       // Seconds played this round
+    lastFrameTime: 0,
+    seed: 0,          // Seed of the current round; the same seed gives the same starting grid
+    lastResult: null, // Result of the last finished round, used for share text
+    menuOpen: false   // History panel is open; the round pauses behind it
 };
+
+/**
+ * SEEDED RANDOMNESS
+ * mulberry32: tiny deterministic PRNG so a round can be shared and replayed
+ */
+let rng = Math.random;
+
+function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function randomSeed() {
+    return (Math.random() * 4294967296) >>> 0;
+}
 
 let balls = [];
 let bricks = [];
@@ -663,7 +717,14 @@ let brickPad = 5;
  */
 function init() {
     resize();
-    resetSimulation();
+    const challenge = Challenge.readFromUrl();
+    if (challenge) {
+        Challenge.applySettings(challenge);
+        resetSimulation(challenge.seed);
+        showToast('Playing a shared challenge. Same grid, same settings.');
+    } else {
+        resetSimulation();
+    }
     requestAnimationFrame(gameLoop);
 }
 
@@ -691,15 +752,28 @@ function resize() {
     ctx.scale(dpr * (w/LOGICAL_WIDTH), dpr * (h/LOGICAL_HEIGHT));
 }
 
-function resetSimulation() {
+function resetSimulation(seed) {
     state.gameOver = false;
     state.running = state.started;
-    state.timeLeft = parseInt(sliderTime.value);
+    state.roundLength = parseInt(sliderTime.value);
+    state.timeLeft = state.roundLength;
+    state.elapsed = 0;
+    state.seed = Number.isInteger(seed) ? seed >>> 0 : randomSeed();
+    state.lastResult = null;
+    rng = mulberry32(state.seed);
     timerDisplay.innerText = state.timeLeft;
     overlayResult.style.display = 'none';
+    updateLabels();
 
     initBricks();
     initBalls();
+}
+
+function updateLabels() {
+    labelRed.innerText = (parseInt(sliderRed.value)/400).toFixed(1) + 'x';
+    labelGreen.innerText = (parseInt(sliderGreen.value)/400).toFixed(1) + 'x';
+    labelTime.innerText = parseInt(sliderTime.value) + 's';
+    labelChaos.innerText = parseInt(sliderChaos.value) + '%';
 }
 
 function initBricks() {
@@ -707,10 +781,17 @@ function initBricks() {
     brickW = (LOGICAL_WIDTH - (brickPad * (cols + 1))) / cols;
     const startY = 80; // Leave room for timer
 
+    // Exactly half the grid starts active, in random spots, so neither side starts ahead
+    const total = rows * cols;
+    const startActive = Array.from({ length: total }, (_, i) => i < total / 2);
+    for (let i = total - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [startActive[i], startActive[j]] = [startActive[j], startActive[i]];
+    }
+
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            // 30% Active start rate
-            const active = Math.random() < 0.3; 
+            const active = startActive[r * cols + c];
             bricks.push({
                 r: r, c: c, // Grid coords for neighbor lookup
                 x: brickPad + c * (brickW + brickPad),
@@ -729,9 +810,9 @@ function initBalls() {
 }
 
 function createBall(x, y, color, type) {
-    const angle = Math.random() * Math.PI * 2;
+    const angle = rng() * Math.PI * 2;
     const initialSpeed = type === 'breaker' ? parseInt(sliderRed.value) : parseInt(sliderGreen.value);
-    return {
+    const ball = {
         x: x, y: y, r: 10,
         vx: Math.cos(angle) * initialSpeed,
         vy: Math.sin(angle) * initialSpeed,
@@ -739,6 +820,22 @@ function createBall(x, y, color, type) {
         type: type, 
         trail: [] 
     };
+    keepOffAxis(ball);
+    return ball;
+}
+
+// Near-horizontal or near-vertical paths skim a wall or bounce in one column forever,
+// so keep every heading at least this far from both axes (speed and direction signs are kept).
+const MIN_AXIS_ANGLE = Math.PI / 12; // 15 degrees
+
+function keepOffAxis(b) {
+    const speed = Math.hypot(b.vx, b.vy);
+    if (!speed) return;
+    const a = Math.atan2(Math.abs(b.vy), Math.abs(b.vx));
+    const clamped = Math.min(Math.max(a, MIN_AXIS_ANGLE), Math.PI / 2 - MIN_AXIS_ANGLE);
+    if (clamped === a) return;
+    b.vx = (b.vx < 0 ? -1 : 1) * Math.cos(clamped) * speed;
+    b.vy = (b.vy < 0 ? -1 : 1) * Math.sin(clamped) * speed;
 }
 
 /**
@@ -749,7 +846,7 @@ function gameLoop(timestamp) {
     const dt = (timestamp - state.lastFrameTime) / 1000;
     state.lastFrameTime = timestamp;
 
-    if (state.running && !state.gameOver) {
+    if (state.running && !state.gameOver && !state.menuOpen) {
         update(Math.min(dt, 0.1)); // Cap dt to prevent skipping
     }
     
@@ -759,6 +856,7 @@ function gameLoop(timestamp) {
 
 function update(dt) {
     // Timer
+    state.elapsed += dt;
     state.timeLeft -= dt;
     timerDisplay.innerText = Math.ceil(state.timeLeft);
     if (state.timeLeft <= 0) {
@@ -769,7 +867,7 @@ function update(dt) {
     const redSpeed = parseInt(sliderRed.value);
     const greenSpeed = parseInt(sliderGreen.value);
     const chaosVal = parseInt(sliderChaos.value);
-
+    
     // Ball Physics
     balls.forEach(b => {
         // Speed Governance
@@ -782,34 +880,42 @@ function update(dt) {
         }
 
         // Chaos (Random Jitter)
-        if (chaosVal > 0 && Math.random() < 0.05) {
-            b.vx += (Math.random() - 0.5) * chaosVal * 15;
-            b.vy += (Math.random() - 0.5) * chaosVal * 15;
+        if (chaosVal > 0 && rng() < 0.05) {
+            b.vx += (rng() - 0.5) * chaosVal * 15;
+            b.vy += (rng() - 0.5) * chaosVal * 15;
         }
 
-        // Move
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
+        // Move in substeps of at most half a radius so a fast ball or a slow frame can't skip past a brick
+        const dist = Math.sqrt(b.vx*b.vx + b.vy*b.vy) * dt;
+        const steps = Math.max(1, Math.ceil(dist / (b.r / 2)));
+        const stepDt = dt / steps;
+        let multiHit = false;
+        for (let s = 0; s < steps; s++) {
+            b.x += b.vx * stepDt;
+            b.y += b.vy * stepDt;
+
+            // Wall Collision
+            if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
+            if (b.x + b.r > LOGICAL_WIDTH) { b.x = LOGICAL_WIDTH - b.r; b.vx *= -1; }
+            if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
+            if (b.y + b.r > LOGICAL_HEIGHT) { b.y = LOGICAL_HEIGHT - b.r; b.vy *= -1; }
+
+            // Brick Interaction: Multi balls pass through, so they still change one cluster per frame
+            if (!multiHit && checkBrickCollision(b) && checkMulti.checked) multiHit = true;
+
+            keepOffAxis(b);
+        }
 
         // Trail Update
         b.trail.unshift({x: b.x, y: b.y, age: 0});
         if (b.trail.length > 25) b.trail.pop(); // Slightly longer trail for the jet look
         b.trail.forEach(t => t.age += dt);
-
-        // Wall Collision
-        if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
-        if (b.x + b.r > LOGICAL_WIDTH) { b.x = LOGICAL_WIDTH - b.r; b.vx *= -1; }
-        if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
-        if (b.y + b.r > LOGICAL_HEIGHT) { b.y = LOGICAL_HEIGHT - b.r; b.vy *= -1; }
-
-        // Brick Interaction
-        checkBrickCollision(b);
     });
 }
 
 function checkBrickCollision(ball) {
     // Optimization: Only check if ball is in brick area
-    if (ball.y < 50 || ball.y > LOGICAL_HEIGHT - 50) return;
+    if (ball.y < 50 || ball.y > LOGICAL_HEIGHT - 50) return false;
 
     for (let i = 0; i < bricks.length; i++) {
         let brick = bricks[i];
@@ -838,9 +944,10 @@ function checkBrickCollision(ball) {
             const heightPct = 1 - (brick.y / LOGICAL_HEIGHT);
             AudioEngine.playTone(heightPct, ball.type);
 
-            break; // Only hit one cluster per frame
+            return true; // Only hit one cluster per step
         }
     }
+    return false;
 }
 
 function triggerBrick(brick, type) {
@@ -867,12 +974,14 @@ function resolveCollision(b, rect) {
     const crossHeight = h * dx;
     
     if (Math.abs(dx) <= w && Math.abs(dy) <= h) {
+        // Push the ball out of the brick on the side it hit, and only reverse if it is still moving in,
+        // so a ball overlapping two bricks at once can't flip back into the one it just left
         if (crossWidth > crossHeight) {
-            if (crossWidth > -crossHeight) b.vy *= -1; 
-            else b.vx *= -1; 
+            if (crossWidth > -crossHeight) { b.y = rect.y + rect.h + b.r; if (b.vy < 0) b.vy *= -1; } // bottom
+            else { b.x = rect.x - b.r; if (b.vx > 0) b.vx *= -1; } // left
         } else {
-            if (crossWidth > -crossHeight) b.vx *= -1; 
-            else b.vy *= -1; 
+            if (crossWidth > -crossHeight) { b.x = rect.x + rect.w + b.r; if (b.vx < 0) b.vx *= -1; } // right
+            else { b.y = rect.y - b.r; if (b.vy > 0) b.vy *= -1; } // top
         }
     }
 }
@@ -899,12 +1008,14 @@ function endGame() {
     const greenPct = (active / total * 100).toFixed(1);
     const redPct = ((total - active) / total * 100).toFixed(1);
     const builderWon = active > (total / 2);
+    state.lastResult = { winner: builderWon ? 'Builder' : 'Breaker', green: greenPct };
 
     // Save History
     saveHistory({
         winner: builderWon ? 'Builder' : 'Breaker',
         green: greenPct,
         red: redPct,
+        seed: state.seed,
         date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     });
 
@@ -1065,15 +1176,21 @@ const safeStorage = {
     }
 };
 
+// Storage can be blocked (private mode, disabled site data) or hold bad JSON; never let that stop the game
 function loadHistory() {
-    try { return JSON.parse(safeStorage.get(STORAGE_KEY) || '[]'); } catch (e) { return []; }
+    try {
+        const hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(hist) ? hist : [];
+    } catch (e) {
+        return [];
+    }
 }
 
 function saveHistory(entry) {
-    let hist = loadHistory();
+    const hist = loadHistory();
     hist.unshift(entry);
     if (hist.length > 20) hist.pop();
-    safeStorage.set(STORAGE_KEY, JSON.stringify(hist));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(hist)); } catch (e) {}
     renderHistory();
 }
 
@@ -1099,15 +1216,121 @@ function renderHistory() {
 }
 
 document.getElementById('btn-clear-history').onclick = () => {
-    safeStorage.remove(STORAGE_KEY);
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     renderHistory();
 };
 
 /**
+ * CHALLENGE LINKS
+ * A round is described by its seed plus the slider settings, stored in the URL query:
+ *   ?seed=<base36>&breaker=<speed>&builder=<speed>&time=<s>&chaos=<pct>&multi=1
+ */
+const Challenge = {
+    readFromUrl() {
+        const p = new URLSearchParams(window.location.search);
+        if (!p.has('seed')) return null;
+        const seed = parseInt(p.get('seed'), 36);
+        if (!Number.isFinite(seed) || seed < 0 || seed > 0xFFFFFFFF) return null;
+        return {
+            seed: seed,
+            breaker: p.get('breaker'),
+            builder: p.get('builder'),
+            time: p.get('time'),
+            chaos: p.get('chaos'),
+            multi: p.get('multi') === '1'
+        };
+    },
+
+    applySettings(c) {
+        // Range inputs clamp and snap assigned values to their min/max/step, so bad params stay in range
+        const set = (slider, v) => { if (v !== null && v !== '' && Number.isFinite(Number(v))) slider.value = v; };
+        set(sliderRed, c.breaker);
+        set(sliderGreen, c.builder);
+        set(sliderTime, c.time);
+        set(sliderChaos, c.chaos);
+        checkMulti.checked = c.multi;
+    },
+
+    buildUrl() {
+        const p = new URLSearchParams({
+            seed: state.seed.toString(36),
+            breaker: sliderRed.value,
+            builder: sliderGreen.value,
+            time: sliderTime.value,
+            chaos: sliderChaos.value
+        });
+        if (checkMulti.checked) p.set('multi', '1');
+        // Split href rather than use origin, which is "null" when the page is opened from a file
+        return `${window.location.href.split(/[?#]/)[0]}?${p.toString()}`;
+    },
+
+    buildText() {
+        // Built from slider values, not label innerText, which CSS uppercases ("1.5X", "60S")
+        const speed = slider => (parseInt(slider.value)/400).toFixed(1) + 'x';
+        const settings = `Breaker ${speed(sliderRed)} vs Builder ${speed(sliderGreen)}, ${parseInt(sliderTime.value)}s` +
+            (parseInt(sliderChaos.value) > 0 ? `, ${parseInt(sliderChaos.value)}% chaos` : '') +
+            (checkMulti.checked ? ', Multi on' : '');
+        const r = state.lastResult;
+        if (!r) return `Try this Brickflux round (${settings}). Can Order win?`;
+        if (r.winner === 'Builder') {
+            return `Order won my Brickflux round with ${r.green}% of the grid standing (${settings}). Can you break it?`;
+        }
+        return `Chaos won my Brickflux round: only ${r.green}% of the grid survived (${settings}). Can you flip it?`;
+    },
+
+    async share() {
+        const url = this.buildUrl();
+        const text = this.buildText();
+        if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+            try {
+                await navigator.share({ title: 'Brickflux challenge', text: text, url: url });
+                return;
+            } catch (e) {
+                if (e.name === 'AbortError') return;
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(`${text} ${url}`);
+            showToast('Challenge link copied. Paste it anywhere.');
+        } catch (e) {
+            window.prompt('Copy this challenge link:', `${text} ${url}`);
+        }
+    }
+};
+
+let toastTimer = null;
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Starting a fresh round drops any challenge params so a reload doesn't bring the old grid back
+function newRound() {
+    if (window.location.search) history.replaceState(null, '', window.location.pathname);
+    resetSimulation();
+}
+
+/**
  * UI BINDINGS
  */
-document.getElementById('btn-reset').onclick = resetSimulation;
-document.getElementById('btn-play-again').onclick = resetSimulation;
+document.getElementById('btn-reset').onclick = newRound;
+document.getElementById('btn-play-again').onclick = newRound;
+document.getElementById('btn-replay').onclick = () => resetSimulation(state.seed);
+document.getElementById('btn-share').onclick = () => Challenge.share();
+document.getElementById('btn-share-result').onclick = () => Challenge.share();
+
+[sliderRed, sliderGreen, sliderTime, sliderChaos].forEach(s => s.addEventListener('input', updateLabels));
+
+// Moving the Time slider mid-round changes the current round's length and keeps the time already played
+sliderTime.addEventListener('input', () => {
+    if (state.gameOver) return;
+    state.roundLength = parseInt(sliderTime.value);
+    state.timeLeft = Math.max(state.roundLength - state.elapsed, 1);
+    timerDisplay.innerText = Math.ceil(state.timeLeft);
+});
 
 // Sound Toggle
 const btnSound = document.getElementById('btn-sound');
@@ -1117,29 +1340,30 @@ const soundOff = document.getElementById('sound-off');
 btnSound.onclick = () => {
     const enabled = AudioEngine.toggle();
     btnSound.classList.toggle('active');
+    btnSound.setAttribute('aria-pressed', String(enabled));
     soundOn.style.display = enabled ? 'block' : 'none';
     soundOff.style.display = enabled ? 'none' : 'block';
 };
 
 // Menu Toggle
+// A closed menu is inert so its buttons stay out of the tab order
 const menu = document.getElementById('side-menu');
-document.getElementById('btn-menu').onclick = () => menu.classList.add('open');
-document.getElementById('btn-close-menu').onclick = () => menu.classList.remove('open');
-
-// Slider Labels (kept live even before the round starts)
-function updateLabels() {
-    labelRed.innerText = (parseInt(sliderRed.value)/400).toFixed(1) + 'x';
-    labelGreen.innerText = (parseInt(sliderGreen.value)/400).toFixed(1) + 'x';
-    labelTime.innerText = parseInt(sliderTime.value) + 's';
-    labelChaos.innerText = parseInt(sliderChaos.value) + '%';
+const btnMenu = document.getElementById('btn-menu');
+const btnCloseMenu = document.getElementById('btn-close-menu');
+const menuBackdrop = document.getElementById('menu-backdrop');
+function setMenuOpen(open) {
+    state.menuOpen = open;
+    menu.classList.toggle('open', open);
+    menuBackdrop.classList.toggle('open', open);
+    menu.inert = !open;
+    btnMenu.setAttribute('aria-expanded', String(open));
+    (open ? btnCloseMenu : btnMenu).focus();
 }
-[sliderRed, sliderGreen, sliderTime, sliderChaos].forEach(s => s.addEventListener('input', updateLabels));
-sliderTime.addEventListener('input', () => {
-    // Before the first start, the countdown previews the chosen round length
-    if (!state.started) {
-        state.timeLeft = parseInt(sliderTime.value);
-        timerDisplay.innerText = state.timeLeft;
-    }
+btnMenu.onclick = () => setMenuOpen(true);
+btnCloseMenu.onclick = () => setMenuOpen(false);
+menuBackdrop.onclick = () => setMenuOpen(false);
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.menuOpen) setMenuOpen(false);
 });
 
 /**
@@ -1183,10 +1407,11 @@ function finishOnboarding() {
     safeStorage.set(ONBOARDING_KEY, '1');
 }
 
+// The grid is already built (possibly from a challenge link's seed), so Start only unpauses it
 function startSimulation() {
     overlayStart.hidden = true;
     state.started = true;
-    resetSimulation();
+    state.running = true;
 }
 
 btnOnbNext.onclick = () => {
@@ -1209,7 +1434,6 @@ window.addEventListener('resize', resize);
 
 // Init
 renderHistory();
-updateLabels();
 init();
 if (safeStorage.get(ONBOARDING_KEY)) showStartPanel();
 else openOnboarding();
