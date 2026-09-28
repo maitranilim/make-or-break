@@ -717,7 +717,7 @@ function initBalls() {
 function createBall(x, y, color, type) {
     const angle = rng() * Math.PI * 2;
     const initialSpeed = type === 'breaker' ? parseInt(sliderRed.value) : parseInt(sliderGreen.value);
-    return {
+    const ball = {
         x: x, y: y, r: 10,
         vx: Math.cos(angle) * initialSpeed,
         vy: Math.sin(angle) * initialSpeed,
@@ -725,6 +725,22 @@ function createBall(x, y, color, type) {
         type: type, 
         trail: [] 
     };
+    keepOffAxis(ball);
+    return ball;
+}
+
+// Near-horizontal or near-vertical paths skim a wall or bounce in one column forever,
+// so keep every heading at least this far from both axes (speed and direction signs are kept).
+const MIN_AXIS_ANGLE = Math.PI / 12; // 15 degrees
+
+function keepOffAxis(b) {
+    const speed = Math.hypot(b.vx, b.vy);
+    if (!speed) return;
+    const a = Math.atan2(Math.abs(b.vy), Math.abs(b.vx));
+    const clamped = Math.min(Math.max(a, MIN_AXIS_ANGLE), Math.PI / 2 - MIN_AXIS_ANGLE);
+    if (clamped === a) return;
+    b.vx = (b.vx < 0 ? -1 : 1) * Math.cos(clamped) * speed;
+    b.vy = (b.vy < 0 ? -1 : 1) * Math.sin(clamped) * speed;
 }
 
 /**
@@ -791,6 +807,8 @@ function update(dt) {
 
         // Brick Interaction
         checkBrickCollision(b);
+
+        keepOffAxis(b);
     });
 }
 
