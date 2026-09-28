@@ -161,3 +161,23 @@ test('pressing Start on a challenge link keeps the shared grid', async () => {
     assert.deepEqual(errors, []);
     await context.close();
 });
+
+test('every tour step fits inside the game area on small phones', async () => {
+    for (const width of [320, 390]) {
+        const context = await browser.newContext({ viewport: { width, height: 760 } });
+        await context.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
+        const page = await context.newPage();
+        await page.goto(base);
+        await page.waitForFunction(() => bricks.length > 0, null, { polling: 50 });
+        for (let step = 0; step < 3; step++) {
+            const fits = await page.evaluate(() => {
+                const area = document.getElementById('overlay-start').getBoundingClientRect();
+                const card = document.querySelector('.start-card').getBoundingClientRect();
+                return card.top >= area.top && card.bottom <= area.bottom;
+            });
+            assert.ok(fits, `step ${step + 1} overflows at ${width}px`);
+            if (step < 2) await page.click('#btn-onb-next');
+        }
+        await context.close();
+    }
+});
