@@ -396,6 +396,19 @@
         }
         button.link-btn:hover { color: var(--text-color); }
 
+        /* Phones: the game area is only as tall as the canvas, so the card has to stay compact */
+        @media (max-width: 600px) {
+            #overlay-start { padding: 8px; align-items: safe center; overflow-y: auto; }
+            .start-card { padding: 14px 16px 12px; border-radius: 12px; }
+            .start-card h2 { font-size: 1.1rem; margin-bottom: 4px; }
+            .start-card p { font-size: 0.85rem; line-height: 1.45; margin-bottom: 10px; }
+            .onb-kicker { margin-bottom: 8px; }
+            .onb-visual { display: none; }
+            .onb-progress { margin-bottom: 10px; }
+            .start-actions .action-btn { height: 34px; }
+            button.link-btn { margin-top: 6px; }
+        }
+
         #timer-display {
             position: absolute;
             top: 20px;
