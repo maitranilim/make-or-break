@@ -87,7 +87,7 @@ test('sharing after a round copies text and a link that reproduces it', async ()
     // Poll on a timer: the default polling uses requestAnimationFrame, which open() freezes
     await page.waitForFunction(() => document.getElementById('toast').textContent.includes('copied'), null, { polling: 50 });
     const copied = await page.evaluate(() => navigator.clipboard.readText());
-    assert.match(copied, /^(Order won|Chaos won) my Make-or-Break round.*Breaker 1\.5x vs Builder 1\.0x, 60s\)\. Can you (break|flip) it\? http/);
+    assert.match(copied, /^(Order won|Chaos won) my Brickflux round.*Breaker 1\.5x vs Builder 1\.0x, 60s\)\. Can you (break|flip) it\? http/);
 
     const url = new URL(copied.slice(copied.indexOf('http')));
     assert.equal(url.searchParams.get('breaker'), '600');

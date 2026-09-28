@@ -5,19 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Make-or-Break: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
+    <meta name="description" content="Brickflux: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
     <meta name="keywords" content="simulation game, physics, stress relief, builder vs breaker, chaos theory, interactive art">
-    <title>Make-or-Break | Interactive Physics Simulation</title>
-
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124" crossorigin="anonymous"></script>
+    <title>Brickflux | Interactive Physics Simulation</title>
 
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "Make-or-Break Simulation",
+      "name": "Brickflux Simulation",
       "description": "An interactive physics simulation demonstrating the balance between creation and destruction.",
       "applicationCategory": "Game",
       "operatingSystem": "Any"
@@ -343,7 +340,9 @@
             transform: translateX(-50%);
             font-size: 4rem;
             font-weight: 800;
-            color: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.55);
+            text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+            font-variant-numeric: tabular-nums;
             pointer-events: none;
             z-index: 5;
         }
@@ -393,20 +392,6 @@
         }
         .info-card h3 { color: var(--accent-blue); margin-bottom: 12px; font-size: 1.2rem; }
         
-        .ad-container {
-            width: 100%;
-            min-height: 100px;
-            background: rgba(255,255,255,0.01);
-            border: 1px dashed #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 30px 0;
-            border-radius: 8px;
-            color: #444;
-            font-size: 0.9rem;
-        }
-
         /* --- SIDE MENU --- */
         #side-menu {
             position: fixed;
@@ -603,7 +588,7 @@
 <article id="content-section">
     <div class="seo-header">
         <h2>Order vs. Chaos: The Simulation</h2>
-        <p>Welcome to Make-or-Break, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
+        <p>Welcome to Brickflux, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
     </div>
 
     <div class="seo-grid">
@@ -617,26 +602,9 @@
             <p>Turn on "Multi" in the header to enable splash damage. In this mode, collisions impact not just one cell, but the entire surrounding cluster. This drastically speeds up the simulation and creates fascinating organic patterns on the grid.</p>
         </div>
 
-        <!-- AdSense Unit -->
-        <div class="full-width-card">
-            <div class="ad-container">
-                <!-- Google AdSense Code -->
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-4315629123147124"
-                     data-ad-slot="1234567890"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-                <span style="position:absolute; font-size:10px; opacity:0.5;">Advertisement</span>
-            </div>
-        </div>
-
         <div class="info-card full-width-card">
             <h3>The Philosophy</h3>
-            <p>Notice how easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
+            <p>Notice how much easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
         </div>
 
         <div class="info-card full-width-card">
@@ -651,7 +619,7 @@
         
         <div class="info-card">
             <h3>FAQ: Controls</h3>
-            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Speed</strong> sliders to handicap or boost specific agents.</p>
+            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Breaker</strong> and <strong>Builder</strong> sliders to handicap or boost specific agents.</p>
         </div>
     </div>
 </article>
@@ -749,6 +717,8 @@ const state = {
     running: true,
     gameOver: false,
     timeLeft: 60,
+    roundLength: 60,  // Round length in seconds, as set by the Time slider
+    elapsed: 0,       // Seconds played this round
     lastFrameTime: 0,
     seed: 0,          // Seed of the current round; the same seed gives the same starting grid
     lastResult: null, // Result of the last finished round, used for share text
@@ -827,7 +797,9 @@ function resize() {
 function resetSimulation(seed) {
     state.gameOver = false;
     state.running = true;
-    state.timeLeft = parseInt(sliderTime.value);
+    state.roundLength = parseInt(sliderTime.value);
+    state.timeLeft = state.roundLength;
+    state.elapsed = 0;
     state.seed = Number.isInteger(seed) ? seed >>> 0 : randomSeed();
     state.lastResult = null;
     rng = mulberry32(state.seed);
@@ -941,6 +913,7 @@ function gameLoop(timestamp) {
 
 function update(dt) {
     // Timer
+    state.elapsed += dt;
     state.timeLeft -= dt;
     if (state.timeLeft <= 0) {
         state.timeLeft = 0;
@@ -1333,11 +1306,11 @@ const Challenge = {
             (parseInt(sliderChaos.value) > 0 ? `, ${parseInt(sliderChaos.value)}% chaos` : '') +
             (checkMulti.checked ? ', Multi on' : '');
         const r = state.lastResult;
-        if (!r) return `Try this Make-or-Break round (${settings}). Can Order win?`;
+        if (!r) return `Try this Brickflux round (${settings}). Can Order win?`;
         if (r.winner === 'Builder') {
-            return `Order won my Make-or-Break round with ${r.green}% of the grid standing (${settings}). Can you break it?`;
+            return `Order won my Brickflux round with ${r.green}% of the grid standing (${settings}). Can you break it?`;
         }
-        return `Chaos won my Make-or-Break round: only ${r.green}% of the grid survived (${settings}). Can you flip it?`;
+        return `Chaos won my Brickflux round: only ${r.green}% of the grid survived (${settings}). Can you flip it?`;
     },
 
     async share() {
@@ -1345,7 +1318,7 @@ const Challenge = {
         const text = this.buildText();
         if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
             try {
-                await navigator.share({ title: 'Make-or-Break challenge', text: text, url: url });
+                await navigator.share({ title: 'Brickflux challenge', text: text, url: url });
                 return;
             } catch (e) {
                 if (e.name === 'AbortError') return;
@@ -1385,6 +1358,14 @@ document.getElementById('btn-share').onclick = () => Challenge.share();
 document.getElementById('btn-share-result').onclick = () => Challenge.share();
 
 [sliderRed, sliderGreen, sliderTime, sliderChaos].forEach(s => s.addEventListener('input', updateLabels));
+
+// Moving the Time slider mid-round changes the current round's length and keeps the time already played
+sliderTime.addEventListener('input', () => {
+    if (state.gameOver) return;
+    state.roundLength = parseInt(sliderTime.value);
+    state.timeLeft = Math.max(state.roundLength - state.elapsed, 1);
+    timerDisplay.innerText = Math.ceil(state.timeLeft);
+});
 
 // Sound Toggle
 const btnSound = document.getElementById('btn-sound');
