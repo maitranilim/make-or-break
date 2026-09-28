@@ -27,16 +27,6 @@ async function open() {
     const context = await browser.newContext();
     await context.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
     const page = await context.newPage();
-    // Seeded Math.random so the result is the same on every run
-    await page.addInitScript(() => {
-        let s = 20260928;
-        Math.random = () => {
-            s = (s + 0x6D2B79F5) | 0;
-            let t = Math.imul(s ^ (s >>> 15), 1 | s);
-            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
-    });
     await page.goto(base);
     await page.waitForFunction(() => bricks.length > 0, null, { polling: 50 });
     return { page, context };
@@ -48,7 +38,7 @@ function playRounds(page, rounds, chaos) {
         sliderChaos.value = chaos;
         let builderWins = 0;
         for (let i = 0; i < rounds; i++) {
-            resetSimulation();
+            resetSimulation(i + 1); // fixed seeds so every run plays the same rounds
             state.running = false; // keep the live loop from stepping this round too
             while (!state.gameOver) update(1 / 60);
             if (bricks.filter(b => b.active).length > bricks.length / 2) builderWins++;
