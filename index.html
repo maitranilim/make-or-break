@@ -316,6 +316,14 @@
             box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
         #side-menu.open { right: 0; }
+        #menu-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 199;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #menu-backdrop.open { opacity: 1; pointer-events: auto; }
         
         .menu-header {
             padding: 20px;
@@ -497,6 +505,7 @@
 </article>
 
 <!-- SIDE MENU -->
+<div id="menu-backdrop"></div>
 <div id="side-menu">
     <div class="menu-header">
         <h3>Match History</h3>
@@ -590,7 +599,8 @@ const state = {
     timeLeft: 60,
     lastFrameTime: 0,
     seed: 0,          // Seed of the current round; the same seed gives the same starting grid
-    lastResult: null  // Result of the last finished round, used for share text
+    lastResult: null, // Result of the last finished round, used for share text
+    menuOpen: false   // History panel is open; the round pauses behind it
 };
 
 /**
@@ -754,7 +764,7 @@ function gameLoop(timestamp) {
     const dt = (timestamp - state.lastFrameTime) / 1000;
     state.lastFrameTime = timestamp;
 
-    if (state.running && !state.gameOver) {
+    if (state.running && !state.gameOver && !state.menuOpen) {
         update(Math.min(dt, 0.1)); // Cap dt to prevent skipping
     }
     
@@ -1233,8 +1243,18 @@ btnSound.onclick = () => {
 
 // Menu Toggle
 const menu = document.getElementById('side-menu');
-document.getElementById('btn-menu').onclick = () => menu.classList.add('open');
-document.getElementById('btn-close-menu').onclick = () => menu.classList.remove('open');
+const menuBackdrop = document.getElementById('menu-backdrop');
+function setMenuOpen(open) {
+    state.menuOpen = open;
+    menu.classList.toggle('open', open);
+    menuBackdrop.classList.toggle('open', open);
+}
+document.getElementById('btn-menu').onclick = () => setMenuOpen(true);
+document.getElementById('btn-close-menu').onclick = () => setMenuOpen(false);
+menuBackdrop.onclick = () => setMenuOpen(false);
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.menuOpen) setMenuOpen(false);
+});
 
 // Resize Listener
 window.addEventListener('resize', resize);
