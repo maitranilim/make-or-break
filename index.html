@@ -1364,7 +1364,7 @@ sliderTime.addEventListener('input', () => {
     if (state.gameOver) return;
     state.roundLength = parseInt(sliderTime.value);
     state.timeLeft = Math.max(state.roundLength - state.elapsed, 1);
-    timerDisplay.innerText = Math.ceil(state.timeLeft);
+    setTimerText(state.timeLeft);
 });
 
 // Sound Toggle
