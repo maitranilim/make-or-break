@@ -35,6 +35,9 @@ async function open(query = '') {
     page.on('pageerror', e => errors.push(e));
     await page.goto(base + query);
     await page.waitForFunction(() => bricks.length > 0, null, { polling: 50 });
+    // Rounds wait for Start: skip the first-visit tour, then press it
+    await page.click('#btn-onb-skip');
+    await page.click('#btn-start');
     return { page, context, errors };
 }
 

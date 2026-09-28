@@ -48,8 +48,11 @@ test('the page boots without script errors and builds the brick grid', async () 
     await context.close();
 });
 
-test('the simulation loop advances', async () => {
+test('the simulation loop advances once started', async () => {
     const { page, context, errors } = await open();
+    // The round waits for Start; first-time visitors get the tour, so skip it first
+    await page.click('#btn-onb-skip');
+    await page.click('#btn-start');
     const before = await page.evaluate(() => balls.map(b => [b.x, b.y]).join());
     await page.waitForTimeout(300);
     const after = await page.evaluate(() => balls.map(b => [b.x, b.y]).join());
