@@ -69,3 +69,13 @@ test('moving the timer slider updates its label', async () => {
     assert.deepEqual(errors, []);
     await context.close();
 });
+
+test('the page carries no ad slot or ad script', async () => {
+    const { page, context } = await open();
+    const s = await page.evaluate(() => ({
+        slots: document.querySelectorAll('.adsbygoogle, .ad-container').length,
+        scripts: [...document.scripts].filter(x => /googlesyndication/.test(x.src)).length
+    }));
+    assert.deepEqual(s, { slots: 0, scripts: 0 });
+    await context.close();
+});
