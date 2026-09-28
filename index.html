@@ -770,23 +770,28 @@ function update(dt) {
             b.vy += (rng() - 0.5) * chaosVal * 15;
         }
 
-        // Move
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
+        // Move in substeps of at most half a radius so a fast ball or a slow frame can't skip past a brick
+        const dist = Math.sqrt(b.vx*b.vx + b.vy*b.vy) * dt;
+        const steps = Math.max(1, Math.ceil(dist / (b.r / 2)));
+        const stepDt = dt / steps;
+        for (let s = 0; s < steps; s++) {
+            b.x += b.vx * stepDt;
+            b.y += b.vy * stepDt;
+
+            // Wall Collision
+            if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
+            if (b.x + b.r > LOGICAL_WIDTH) { b.x = LOGICAL_WIDTH - b.r; b.vx *= -1; }
+            if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
+            if (b.y + b.r > LOGICAL_HEIGHT) { b.y = LOGICAL_HEIGHT - b.r; b.vy *= -1; }
+
+            // Brick Interaction
+            checkBrickCollision(b);
+        }
 
         // Trail Update
         b.trail.unshift({x: b.x, y: b.y, age: 0});
         if (b.trail.length > 25) b.trail.pop(); // Slightly longer trail for the jet look
         b.trail.forEach(t => t.age += dt);
-
-        // Wall Collision
-        if (b.x - b.r < 0) { b.x = b.r; b.vx *= -1; }
-        if (b.x + b.r > LOGICAL_WIDTH) { b.x = LOGICAL_WIDTH - b.r; b.vx *= -1; }
-        if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
-        if (b.y + b.r > LOGICAL_HEIGHT) { b.y = LOGICAL_HEIGHT - b.r; b.vy *= -1; }
-
-        // Brick Interaction
-        checkBrickCollision(b);
     });
 }
 
@@ -850,12 +855,14 @@ function resolveCollision(b, rect) {
     const crossHeight = h * dx;
     
     if (Math.abs(dx) <= w && Math.abs(dy) <= h) {
+        // Push the ball out of the brick on the side it hit, and only reverse if it is still moving in,
+        // so a ball overlapping two bricks at once can't flip back into the one it just left
         if (crossWidth > crossHeight) {
-            if (crossWidth > -crossHeight) b.vy *= -1; 
-            else b.vx *= -1; 
+            if (crossWidth > -crossHeight) { b.y = rect.y + rect.h + b.r; if (b.vy < 0) b.vy *= -1; } // bottom
+            else { b.x = rect.x - b.r; if (b.vx > 0) b.vx *= -1; } // left
         } else {
-            if (crossWidth > -crossHeight) b.vx *= -1; 
-            else b.vy *= -1; 
+            if (crossWidth > -crossHeight) { b.x = rect.x + rect.w + b.r; if (b.vx < 0) b.vx *= -1; } // right
+            else { b.y = rect.y - b.r; if (b.vy > 0) b.vy *= -1; } // top
         }
     }
 }
