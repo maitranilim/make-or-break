@@ -45,7 +45,7 @@ async function setTime(page, seconds) {
 
 test('raising the Time slider mid-round extends the running timer', async () => {
     const { page, context, errors } = await open();
-    await page.evaluate(() => { state.timeLeft = 50; }); // 10s of a 60s round played
+    await page.evaluate(() => { state.elapsed = 10; state.timeLeft = 50; }); // 10s of a 60s round played
     await setTime(page, 90);
     const s = await page.evaluate(() => ({ left: state.timeLeft, shown: parseInt(timerDisplay.innerText) }));
     assert.ok(s.left > 75 && s.left <= 80, `expected ~80s left, got ${s.left}`);
@@ -56,12 +56,23 @@ test('raising the Time slider mid-round extends the running timer', async () => 
 
 test('lowering the Time slider below the time played leaves a moment before the round ends', async () => {
     const { page, context, errors } = await open();
-    await page.evaluate(() => { state.timeLeft = 20; }); // 40s played
+    await page.evaluate(() => { state.elapsed = 40; state.timeLeft = 20; }); // 40s played
     await setTime(page, 30);
     const s = await page.evaluate(() => ({ left: state.timeLeft, over: state.gameOver }));
     assert.ok(s.left > 0 && s.left <= 1, `expected under a second left, got ${s.left}`);
     assert.equal(s.over, false);
     await page.waitForFunction(() => state.gameOver, null, { polling: 50, timeout: 5000 });
+    assert.deepEqual(errors, []);
+    await context.close();
+});
+
+test('dragging the Time slider down and back up keeps the time played', async () => {
+    const { page, context, errors } = await open();
+    await page.evaluate(() => { state.elapsed = 40; state.timeLeft = 20; }); // 40s of a 60s round played
+    await setTime(page, 30);
+    await setTime(page, 60);
+    const left = await page.evaluate(() => state.timeLeft);
+    assert.ok(left > 15 && left <= 20, `expected ~20s left, got ${left}`);
     assert.deepEqual(errors, []);
     await context.close();
 });
