@@ -63,3 +63,25 @@ for (const type of ['breaker', 'builder']) {
         await context.close();
     });
 }
+
+test('a Multi breaker at top speed on a 0.1s frame changes only one cluster', async () => {
+    const { page, context, errors } = await open();
+    const changed = await page.evaluate(() => {
+        state.running = false;
+        checkMulti.checked = true;
+        sliderRed.value = sliderRed.max;
+        sliderChaos.value = 0;
+        bricks.forEach(b => b.active = true);
+        const bottom = bricks[bricks.length - Math.floor(cols / 2)]; // Middle of the bottom row, away from the walls
+        const ball = createBall(bottom.x + bottom.w / 2, bottom.y + bottom.h + 15, '#fff', 'breaker');
+        ball.vx = 0;
+        ball.vy = -parseInt(sliderRed.max);
+        balls = [ball];
+        update(0.1);
+        return bricks.filter(b => !b.active).length;
+    });
+    // One cluster is the brick hit plus its neighbours: at most 9 bricks
+    assert.ok(changed > 0 && changed <= 9, `changed ${changed} bricks`);
+    assert.deepEqual(errors, []);
+    await context.close();
+});

@@ -790,6 +790,7 @@ function update(dt) {
         const dist = Math.sqrt(b.vx*b.vx + b.vy*b.vy) * dt;
         const steps = Math.max(1, Math.ceil(dist / (b.r / 2)));
         const stepDt = dt / steps;
+        let multiHit = false;
         for (let s = 0; s < steps; s++) {
             b.x += b.vx * stepDt;
             b.y += b.vy * stepDt;
@@ -800,8 +801,8 @@ function update(dt) {
             if (b.y - b.r < 0) { b.y = b.r; b.vy *= -1; }
             if (b.y + b.r > LOGICAL_HEIGHT) { b.y = LOGICAL_HEIGHT - b.r; b.vy *= -1; }
 
-            // Brick Interaction
-            checkBrickCollision(b);
+            // Brick Interaction: Multi balls pass through, so they still change one cluster per frame
+            if (!multiHit && checkBrickCollision(b) && checkMulti.checked) multiHit = true;
 
             keepOffAxis(b);
         }
@@ -815,7 +816,7 @@ function update(dt) {
 
 function checkBrickCollision(ball) {
     // Optimization: Only check if ball is in brick area
-    if (ball.y < 50 || ball.y > LOGICAL_HEIGHT - 50) return;
+    if (ball.y < 50 || ball.y > LOGICAL_HEIGHT - 50) return false;
 
     for (let i = 0; i < bricks.length; i++) {
         let brick = bricks[i];
@@ -844,9 +845,10 @@ function checkBrickCollision(ball) {
             const heightPct = 1 - (brick.y / LOGICAL_HEIGHT);
             AudioEngine.playTone(heightPct, ball.type);
 
-            break; // Only hit one cluster per frame
+            return true; // Only hit one cluster per step
         }
     }
+    return false;
 }
 
 function triggerBrick(brick, type) {
