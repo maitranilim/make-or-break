@@ -3,7 +3,7 @@
 **Status:** implementation proposal; no application changes in this planning PR.  
 **Reviewed:** 28 September 2026.  
 **Repository:** [maitranilim/make-or-break](https://github.com/maitranilim/make-or-break).  
-**Baseline:** main at `2a4ac36e3ae9a225fe5ca201665cd0b638735fcb`, refreshed after PRs #1 and #2 merged during this review.  
+**Baseline:** main at `b45fd25c4352c813b3fbd80181adf99ea9e23be4`, refreshed after PRs #1, #2 and #4 merged during this review.  
 **Build sequence:** [revamp-build-steps.md](revamp-build-steps.md).
 
 ## The goal
@@ -22,14 +22,15 @@ The complete experience should let a visitor:
 
 ## What the repository actually contains
 
-This is a source review, not a live-site performance or accessibility audit. Main now contains eight files, including the roughly 42 kB single-file app, README, package files, two browser-test files and a CI workflow. The live URL listed by the repository is [brickflux.vercel.app](https://brickflux.vercel.app); deployment parity with main has not been verified.
+This is a source review, not a live-site performance or accessibility audit. Main now contains nine files, including the roughly 43 kB single-file app, README, package files, three browser-test files and a CI workflow. The live URL listed by the repository is [brickflux.vercel.app](https://brickflux.vercel.app); deployment parity with main has not been verified.
 
 | Finding | Evidence in the reviewed source | Consequence for the revamp |
 | --- | --- | --- |
-| Canvas2D, ordinary JavaScript, inline CSS and engine; npm tests and CI, but no application build system | [README](https://github.com/maitranilim/make-or-break/blob/2a4ac36e3ae9a225fe5ca201665cd0b638735fcb/README.md), `index.html` | Modularize incrementally. Keep Canvas2D as a working renderer and fallback. |
+| Canvas2D, ordinary JavaScript, inline CSS and engine; npm tests and CI, but no application build system | [README](https://github.com/maitranilim/make-or-break/blob/b45fd25c4352c813b3fbd80181adf99ea9e23be4/README.md), `index.html` | Modularize incrementally. Keep Canvas2D as a working renderer and fallback. |
 | An 800 × 600 logical world with 14 × 20 cells; each cell starts active with probability 0.3 | `LOGICAL_WIDTH`, `initBricks()` | Preserve all 280 cells and world coordinates. The initial count varies; it is not exactly 30%. |
 | Builder restores inactive cells; Breaker clears active cells | `checkBrickCollision()`, `triggerBrick()` | Cell appearance must represent active/inactive state, not invented ownership. |
 | Multi affects the hit cell and up to eight neighbors, and skips the normal bounce | `getNeighbors()`, `checkBrickCollision()` | Explain both rule changes. Show actual changed cells, including edge and corner cases. |
+| Headings are kept at least 15 degrees from each axis | `createBall()`, `keepOffAxis()`, `update()` | Preserve this recent behavior and its tests during extraction and fixed-tick migration. |
 | Movement uses variable frame duration; chaos rolls once per update | `gameLoop()`, `update()` | Rendering frequency can change trajectories. Seeded initialization alone cannot provide exact replay. |
 | The timer calls `endGame()`, then the same update continues moving the agents | `update()`, `endGame()` | Freeze the final state before publishing the result; prevent a score/board mismatch. |
 | Builder wins only above 50% active; a 50% tie belongs to Breaker | `endGame()` | Label the threshold explicitly. Do not silently redesign scoring. |
@@ -40,13 +41,13 @@ This is a source review, not a live-site performance or accessibility audit. Mai
 
 ### Merged work to preserve
 
-[PR #1](https://github.com/maitranilim/make-or-break/pull/1) added seeded challenge links, share/retry controls, guarded local storage and seven browser tests. [PR #2](https://github.com/maitranilim/make-or-break/pull/2) added CI and three smoke tests. Both merged while this plan was being prepared; the final baseline incorporates them. The current app source matches the reviewed PR #1 head `e6b66aedb1eec5ca66cf76b519d74225f26b0938`.
+[PR #1](https://github.com/maitranilim/make-or-break/pull/1) added seeded challenge links, share/retry controls, guarded local storage and seven browser tests. [PR #2](https://github.com/maitranilim/make-or-break/pull/2) added CI and three smoke tests. [PR #4](https://github.com/maitranilim/make-or-break/pull/4) subsequently added `keepOffAxis()`, keeping agent headings at least 15 degrees from either axis at launch and after updates, plus two angle tests. All three merged while this plan was being prepared; the final baseline incorporates them.
 
-The challenge tests freeze `requestAnimationFrame` for most checks. The smoke tests check boot, advancing movement and a timer label. Together they do not establish deterministic full-round replay. Their execution has not been independently verified in this planning task.
+The challenge tests freeze `requestAnimationFrame` for most checks. The smoke tests check boot, advancing movement and a timer label. The angle tests check launch headings and correction of flat paths. These twelve tests do not establish deterministic full-round replay. Their execution has not been independently verified in this planning task.
 
 CI currently runs `npm ci`, installs Playwright Chromium and runs `npm test` on PRs and pushes to main, using Node 20. Extend that workflow when introducing a build system; select a supported Node version compatible with the pinned tooling.
 
-Before implementation, refresh main and any open PRs again. Start from current main, preserve both merged features and retain their tests while adapting the module-serving harness. Do not restore the earlier two-file baseline at `188780403c8778d1eaa29d77122027d43ea89b8b`.
+Before implementation, refresh main and any open PRs again. Start from current main, preserve all three merged additions and retain their tests while adapting the module-serving harness. Do not restore the earlier two-file baseline at `188780403c8778d1eaa29d77122027d43ea89b8b`.
 
 ## Signature interactions
 
@@ -173,7 +174,7 @@ A useful acceptance session: a new visitor can change a speed, explain one inspe
 
 ## Research and technical references
 
-The interaction selection applies the earlier *Future Web Interaction Research* report dated 25 September 2026. Repository facts above come from the pinned main source, PR #1 diff, merged CI workflow and smoke tests. No runtime measurements are claimed.
+The interaction selection applies the earlier *Future Web Interaction Research* report dated 25 September 2026. Repository facts above come from the pinned main source, PR #1 diff, merged CI workflow, smoke tests and the PR #4 angle-fix diff. No runtime measurements are claimed.
 
 Official references checked 28 September 2026:
 

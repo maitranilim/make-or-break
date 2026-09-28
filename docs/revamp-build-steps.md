@@ -8,7 +8,7 @@ Implement dependencies in order. Keep a working, previewable app after every ste
 
 | Step | Depends on | Deliverable | Suggested branch suffix |
 | --- | --- | --- | --- |
-| 01 | Current main and merged PRs #1/#2 review | Baseline and compatibility fixtures | `baseline` |
+| 01 | Current main and merged PRs #1/#2/#4 review | Baseline and compatibility fixtures | `baseline` |
 | 02 | 01 | Modular app and dual-renderer contract | `modules` |
 | 03 | 02 | Versioned fixed-tick engine | `engine` |
 | 04 | 03 | Event recording and cell history | `recording` |
@@ -28,7 +28,7 @@ Use a `revamp/` branch prefix. Prefer small sequential PRs over replacing the en
 **Touch:** `README.md`, `tests/challenge.test.mjs`, `tests/fixtures/`, `docs/revamp-validation.md`.
 
 - Refresh main, open PRs and applicable repository instructions. Record the exact reviewed SHAs; the plan's SHA is a snapshot, not an instruction to overwrite later work.
-- Start from current main, which includes PRs #1 and #2 at this review. Run the existing challenge and smoke tests before changing their harnesses and record the actual outcome.
+- Start from current main, which includes PRs #1, #2 and #4 at this review. Run the twelve challenge, smoke and angle tests before changing their harnesses and record the actual outcome.
 - Capture desktop and narrow-screen screenshots, default values, grid geometry, winning threshold, Multi behavior, sound toggle and legacy history shape.
 - Save initial occupancy fixtures for several valid seeds, including 0 and the upper unsigned 32-bit boundary. Add malformed and out-of-range URL cases.
 - Establish round semantics: speeds/chaos/Multi apply on the next tick; duration applies on the next new round. Preserve the current 50% tie behavior.
@@ -40,11 +40,11 @@ Use a `revamp/` branch prefix. Prefer small sequential PRs over replacing the en
 
 **Touch:** `index.html`, `package.json`, lockfile, `tsconfig.json`, `.github/workflows/ci.yml`, `src/main.ts`, `src/app.ts`, `src/sim/`, `src/render/canvas2d.ts`, `src/audio.ts`, `src/styles/`.
 
-- Move styles, controls, drawing, audio, history and engine functions into their respective modules. Keep the 800 × 600 world, 14 × 20 grid and existing Canvas2D output.
+- Move styles, controls, drawing, audio, history and engine functions into their respective modules. Keep the 800 × 600 world, 14 × 20 grid, existing Canvas2D output and PR #4's 15-degree off-axis heading guard.
 - Introduce Vite and TypeScript. Pin resolved dependencies in the lockfile and document a compatible Node runtime. Do not run a scaffold generator over the repository.
 - Extract pure rule functions from `checkBrickCollision()`, `getNeighbors()`, `triggerBrick()` and `endGame()`. Pass configuration/state as arguments instead of reading DOM inputs.
 - Define a renderer contract: `render(snapshot, viewState)`, `resize(size, dpr)`, `pick(pointer)` and `dispose()`. It must not own simulation time.
-- Keep PR #1's challenge parser/share behavior operational. Update both browser test servers: they currently respond with the same HTML for every path, which will not serve imported modules correctly. Serve the Vite app or built preview. Preserve PR #2's smoke checks.
+- Keep PR #1's challenge parser/share behavior operational. Update all three browser test servers: they currently respond with the same HTML for every path, which will not serve imported modules correctly. Serve the Vite app or built preview. Preserve PR #2's smoke checks and PR #4's angle checks.
 - Add a TypeScript loader such as `tsx` for Node unit tests. Retain the existing Node/Playwright browser runner. Extend CI to run types, unit/browser checks and the production build on a supported Node version compatible with the pinned dependencies.
 - Preserve metadata and the ad integration. Document that development now uses an HTTP dev server and production uses generated static files.
 
@@ -61,13 +61,13 @@ Use a `revamp/` branch prefix. Prefer small sequential PRs over replacing the en
 - Bound work per animation frame. Discard hidden-tab wall-time backlog and require Resume on return. Never advance the timer without advancing the corresponding engine ticks.
 - Convert chaos sampling to a tick-based schedule. As an initial calibration, a 5% event chance at a nominal 60 Hz corresponds to `1 - (1 - 0.05) ** (60 / 120)` per 120 Hz tick. This is an intentional engine-version change, not legacy trajectory compatibility.
 - Derive chaos samples deterministically from seed, actor, tick and sample channel. Grid initialization retains the old seeded occupancy mapping. Record any changed launch or collision behavior in the engine-version notes.
-- Preserve normal bounce versus Multi's non-bouncing neighborhood effect. Define processing order as Breaker then Builder and row-major cell lookup, matching the current source.
+- Preserve normal bounce versus Multi's non-bouncing neighborhood effect and `keepOffAxis()` at launch/after steps. Define processing order as Breaker then Builder and row-major cell lookup, matching the current source.
 - Return immediately when the final tick ends the round. Compute the result from that frozen state once; write history once.
 - Validate finite velocities, bounds and command ranges. If collision corrections change gameplay, document them as rule changes rather than hiding them inside a graphics commit.
 
 **Done when:** a full run with the same version/seed/commands has the same final state under synthetic 30, 60 and 144 Hz render schedules. Pause, resize, drawer opening and renderer selection do not change a tick's state.
 
-**Meaningful checks:** single-cell hit, Multi at corner/edge/interior, no-op neighbor changes, 50% tie, timer boundary, no post-result mutation, maximum speeds, duplicate end-game calls and same-tick command ordering. Cross-browser exactness is a separate release gate; do not promise it from a same-process test.
+**Meaningful checks:** single-cell hit, Multi at corner/edge/interior, no-op neighbor changes, 50% tie, timer boundary, no post-result mutation, maximum speeds, off-axis headings with speed/sign preservation, duplicate end-game calls and same-tick command ordering. Cross-browser exactness is a separate release gate; do not promise it from a same-process test.
 
 ## 04 — Record enough truth for every visual
 
@@ -229,8 +229,8 @@ Revamp maitranilim/make-or-break using docs/revamp-plan.md and
 docs/revamp-build-steps.md.
 
 First inspect current main, repository instructions and any newer PRs. Preserve
-merged PR #1's challenge links and PR #2's CI/smoke tests. Complete step 01, then work through the
-dependencies in small reviewable PRs, keeping a usable app at each stage.
+merged PR #1's challenge links, PR #2's CI/smoke tests and PR #4's angle fix.
+Complete step 01, then work through the dependencies in small reviewable PRs, keeping a usable app at each stage.
 
 Build the first release: the living arena, cell microscope, scroll dissection
 and finite preset drum, with an isolated deterministic engine, event recording,
