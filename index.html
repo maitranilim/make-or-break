@@ -230,6 +230,69 @@
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* --- START / ONBOARDING OVERLAY --- */
+        #overlay-start {
+            position: absolute;
+            inset: 0;
+            background: rgba(11, 13, 22, 0.72);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            z-index: 60;
+            animation: fadeIn 0.3s ease;
+        }
+        #overlay-start[hidden], #overlay-start [hidden] { display: none; }
+
+        .start-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--panel-bg);
+            border: 1px solid #2a2d40;
+            border-radius: 14px;
+            padding: 28px 24px 22px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .start-card h2 { font-size: 1.5rem; color: #fff; margin-bottom: 8px; }
+        .start-card p { margin: 0 0 20px; font-size: 0.95rem; }
+        .start-card strong { color: var(--text-color); }
+
+        .onb-kicker {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .onb-visual { display: flex; justify-content: center; gap: 10px; margin-bottom: 16px; height: 22px; align-items: center; }
+        .onb-dot-red, .onb-dot-green { width: 18px; height: 18px; border-radius: 50%; }
+        .onb-dot-red { background: var(--accent-red); box-shadow: 0 0 12px var(--accent-red); }
+        .onb-dot-green { background: var(--accent-green); box-shadow: 0 0 12px var(--accent-green); }
+        .onb-brick { width: 28px; height: 12px; border-radius: 2px; background: #fff; }
+        .onb-brick.dead { background: transparent; border: 1px solid #333855; }
+
+        .onb-progress { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
+        .onb-progress span { width: 6px; height: 6px; border-radius: 50%; background: #333855; transition: background 0.2s; }
+        .onb-progress span.on { background: var(--accent-blue); }
+
+        .start-actions { display: flex; gap: 10px; justify-content: center; }
+        .start-actions .action-btn { flex: 1; max-width: 180px; }
+        button.action-btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+        button.action-btn.primary:hover { background: #5590ff; border-color: #5590ff; }
+        button.link-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        button.link-btn:hover { color: var(--text-color); }
+
         #timer-display {
             position: absolute;
             top: 20px;
@@ -395,6 +458,43 @@
     <div id="game-wrapper">
         <div id="timer-display">60</div>
         <canvas id="gameCanvas"></canvas>
+        <!-- Start / Onboarding Overlay -->
+        <div id="overlay-start" role="dialog" aria-modal="true" aria-label="Start the simulation">
+            <div class="start-card">
+                <!-- First-run onboarding: shown once per browser -->
+                <div id="onboarding" hidden>
+                    <div class="onb-kicker">Quick tour · <span id="onb-count">1 of 3</span></div>
+                    <div class="onb-step" data-step="0">
+                        <div class="onb-visual"><span class="onb-dot-red"></span><span class="onb-brick"></span><span class="onb-brick dead"></span><span class="onb-dot-green"></span></div>
+                        <h2>Two agents, one grid</h2>
+                        <p>The <strong>red Breaker</strong> knocks out lit bricks. The <strong>green Builder</strong> lights dark ones back up.</p>
+                    </div>
+                    <div class="onb-step" data-step="1" hidden>
+                        <h2>You set the rules</h2>
+                        <p>Use the sliders up top to change each agent's <strong>speed</strong>, the round <strong>time</strong>, and how much <strong>chaos</strong> bends their paths. <strong>Multi</strong> lets a hit spread to neighbouring bricks.</p>
+                    </div>
+                    <div class="onb-step" data-step="2" hidden>
+                        <h2>Who wins?</h2>
+                        <p>When the timer runs out, the <strong>Builder</strong> wins if more than half the grid is lit. Otherwise the <strong>Breaker</strong> takes it.</p>
+                    </div>
+                    <div class="onb-progress" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
+                    <div class="start-actions">
+                        <button class="action-btn" id="btn-onb-skip">Skip</button>
+                        <button class="action-btn primary" id="btn-onb-next">Next</button>
+                    </div>
+                </div>
+
+                <!-- Returning visitors: just a Start button -->
+                <div id="start-panel" hidden>
+                    <h2>Ready when you are</h2>
+                    <p>Tune the sliders if you like, then start the round.</p>
+                    <div class="start-actions">
+                        <button class="action-btn primary" id="btn-start">Start simulation</button>
+                    </div>
+                    <button class="link-btn" id="btn-how">How it works</button>
+                </div>
+            </div>
+        </div>
         <!-- Overlay Result -->
         <div id="overlay-result">
             <h2 id="result-title" style="color:#fff; font-size:3rem; margin-bottom:10px;">GAME OVER</h2>
@@ -543,7 +643,8 @@ const resultDesc = document.getElementById('result-desc');
 
 // State
 const state = {
-    running: true,
+    started: false, // Flips once the visitor presses Start; nothing moves before that
+    running: false,
     gameOver: false,
     timeLeft: 60,
     lastFrameTime: 0
@@ -592,7 +693,7 @@ function resize() {
 
 function resetSimulation() {
     state.gameOver = false;
-    state.running = true;
+    state.running = state.started;
     state.timeLeft = parseInt(sliderTime.value);
     timerDisplay.innerText = state.timeLeft;
     overlayResult.style.display = 'none';
@@ -665,15 +766,9 @@ function update(dt) {
         endGame();
     }
 
-    // Update UI Labels
     const redSpeed = parseInt(sliderRed.value);
     const greenSpeed = parseInt(sliderGreen.value);
     const chaosVal = parseInt(sliderChaos.value);
-    
-    labelRed.innerText = (redSpeed/400).toFixed(1) + 'x';
-    labelGreen.innerText = (greenSpeed/400).toFixed(1) + 'x';
-    labelTime.innerText = parseInt(sliderTime.value) + 's';
-    labelChaos.innerText = chaosVal + '%';
 
     // Ball Physics
     balls.forEach(b => {
@@ -957,17 +1052,34 @@ function drawProgressBar() {
  */
 const STORAGE_KEY = 'mob_history_v1';
 
+// localStorage can throw (private mode, blocked site data), so every access goes through here
+const safeStorage = {
+    get(key) {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+    },
+    set(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) { /* not persisted */ }
+    },
+    remove(key) {
+        try { localStorage.removeItem(key); } catch (e) { /* nothing to remove */ }
+    }
+};
+
+function loadHistory() {
+    try { return JSON.parse(safeStorage.get(STORAGE_KEY) || '[]'); } catch (e) { return []; }
+}
+
 function saveHistory(entry) {
-    let hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let hist = loadHistory();
     hist.unshift(entry);
     if (hist.length > 20) hist.pop();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(hist));
+    safeStorage.set(STORAGE_KEY, JSON.stringify(hist));
     renderHistory();
 }
 
 function renderHistory() {
     const list = document.getElementById('history-list');
-    const hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const hist = loadHistory();
     
     if (hist.length === 0) {
         list.innerHTML = '<div style="color:#666; text-align:center;">No match history.</div>';
@@ -987,7 +1099,7 @@ function renderHistory() {
 }
 
 document.getElementById('btn-clear-history').onclick = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    safeStorage.remove(STORAGE_KEY);
     renderHistory();
 };
 
@@ -1014,12 +1126,93 @@ const menu = document.getElementById('side-menu');
 document.getElementById('btn-menu').onclick = () => menu.classList.add('open');
 document.getElementById('btn-close-menu').onclick = () => menu.classList.remove('open');
 
+// Slider Labels (kept live even before the round starts)
+function updateLabels() {
+    labelRed.innerText = (parseInt(sliderRed.value)/400).toFixed(1) + 'x';
+    labelGreen.innerText = (parseInt(sliderGreen.value)/400).toFixed(1) + 'x';
+    labelTime.innerText = parseInt(sliderTime.value) + 's';
+    labelChaos.innerText = parseInt(sliderChaos.value) + '%';
+}
+[sliderRed, sliderGreen, sliderTime, sliderChaos].forEach(s => s.addEventListener('input', updateLabels));
+sliderTime.addEventListener('input', () => {
+    // Before the first start, the countdown previews the chosen round length
+    if (!state.started) {
+        state.timeLeft = parseInt(sliderTime.value);
+        timerDisplay.innerText = state.timeLeft;
+    }
+});
+
+/**
+ * START & ONBOARDING
+ * First-time visitors get a three-step tour; everyone else sees a Start button.
+ */
+const ONBOARDING_KEY = 'mob_onboarded_v1';
+const overlayStart = document.getElementById('overlay-start');
+const onboarding = document.getElementById('onboarding');
+const startPanel = document.getElementById('start-panel');
+const onbSteps = onboarding.querySelectorAll('.onb-step');
+const onbDots = onboarding.querySelectorAll('.onb-progress span');
+const onbCount = document.getElementById('onb-count');
+const btnOnbNext = document.getElementById('btn-onb-next');
+const btnStart = document.getElementById('btn-start');
+let onbIndex = 0;
+
+function showOnboardingStep(i) {
+    onbIndex = i;
+    onbSteps.forEach((el, n) => { el.hidden = n !== i; });
+    onbDots.forEach((el, n) => el.classList.toggle('on', n <= i));
+    onbCount.innerText = `${i + 1} of ${onbSteps.length}`;
+    const last = i === onbSteps.length - 1;
+    btnOnbNext.innerText = last ? 'Start simulation' : 'Next';
+    btnOnbNext.focus();
+}
+
+function openOnboarding() {
+    startPanel.hidden = true;
+    onboarding.hidden = false;
+    showOnboardingStep(0);
+}
+
+function showStartPanel() {
+    onboarding.hidden = true;
+    startPanel.hidden = false;
+    btnStart.focus();
+}
+
+function finishOnboarding() {
+    safeStorage.set(ONBOARDING_KEY, '1');
+}
+
+function startSimulation() {
+    overlayStart.hidden = true;
+    state.started = true;
+    resetSimulation();
+}
+
+btnOnbNext.onclick = () => {
+    if (onbIndex < onbSteps.length - 1) {
+        showOnboardingStep(onbIndex + 1);
+    } else {
+        finishOnboarding();
+        startSimulation();
+    }
+};
+document.getElementById('btn-onb-skip').onclick = () => {
+    finishOnboarding();
+    showStartPanel();
+};
+btnStart.onclick = startSimulation;
+document.getElementById('btn-how').onclick = openOnboarding;
+
 // Resize Listener
 window.addEventListener('resize', resize);
 
 // Init
 renderHistory();
+updateLabels();
 init();
+if (safeStorage.get(ONBOARDING_KEY)) showStartPanel();
+else openOnboarding();
 </script>
 
 </body>
