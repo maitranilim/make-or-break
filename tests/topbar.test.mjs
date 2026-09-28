@@ -54,7 +54,7 @@ async function setSlider(page, id, value) {
     await page.waitForTimeout(80);
 }
 
-for (const [name, width] of [['desktop', 1280], ['tablet', 900], ['small tablet', 740], ['phone', 390], ['small phone', 320]]) {
+for (const [name, width] of [['desktop', 1280], ['tablet', 900], ['small tablet', 740], ['narrow tablet', 760], ['wide phone', 790], ['phone', 390], ['small phone', 320]]) {
     test(`top bar layout does not move when values change (${name})`, async () => {
         const { page, context, errors } = await open(width);
         await run(page);
@@ -73,6 +73,13 @@ for (const [name, width] of [['desktop', 1280], ['tablet', 900], ['small tablet'
             .filter(el => { const r = el.getBoundingClientRect(); return r.width && (r.right > innerWidth + 0.5 || r.left < -0.5); })
             .map(el => el.id || el.className));
         assert.deepEqual(spill, []);
+        // Controls must not overlap the buttons next to them
+        const overlap = await page.evaluate(() => {
+            const last = [...document.querySelectorAll('.slider-container')].pop().getBoundingClientRect();
+            const btns = document.querySelector('.btn-group').getBoundingClientRect();
+            return last.bottom > btns.top && last.top < btns.bottom && last.right > btns.left;
+        });
+        assert.equal(overlap, false, 'sliders overlap the buttons');
         assert.deepEqual(errors, []);
         await context.close();
     });
@@ -130,3 +137,18 @@ test('on a phone the game area hugs the canvas instead of leaving empty space', 
     assert.ok(gap < 8, `${gap}px of empty space around the canvas`);
     await context.close();
 });
+
+for (const width of [320, 390]) {
+    test(`the round result and all its buttons fit on a ${width}px phone`, async () => {
+        const { page, context } = await open(width, 700);
+        await page.evaluate(() => endGame());
+        const clipped = await page.evaluate(() => {
+            const wr = document.getElementById('game-wrapper').getBoundingClientRect();
+            return [...document.querySelectorAll('#overlay-result h2, #overlay-result div, #overlay-result button')]
+                .filter(el => { const r = el.getBoundingClientRect(); return r.top < wr.top - 0.5 || r.bottom > wr.bottom + 0.5; })
+                .map(el => el.id || el.className);
+        });
+        assert.deepEqual(clipped, []);
+        await context.close();
+    });
+}
