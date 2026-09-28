@@ -54,7 +54,7 @@ async function setSlider(page, id, value) {
     await page.waitForTimeout(80);
 }
 
-for (const [name, width] of [['desktop', 1280], ['tablet', 900], ['phone', 390]]) {
+for (const [name, width] of [['desktop', 1280], ['tablet', 900], ['small tablet', 740], ['phone', 390], ['small phone', 320]]) {
     test(`top bar layout does not move when values change (${name})`, async () => {
         const { page, context, errors } = await open(width);
         await run(page);
@@ -68,8 +68,11 @@ for (const [name, width] of [['desktop', 1280], ['tablet', 900], ['phone', 390]]
         }
         await page.waitForTimeout(300);
         assert.deepEqual(await boxes(page), before, 'running the game moved the bar');
-        // Nothing may overflow the viewport sideways
-        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        // Nothing in the bar may spill past the screen edge (the bar clips, so check each control)
+        const spill = await page.evaluate(() => [...document.querySelectorAll('header *')]
+            .filter(el => { const r = el.getBoundingClientRect(); return r.width && (r.right > innerWidth + 0.5 || r.left < -0.5); })
+            .map(el => el.id || el.className));
+        assert.deepEqual(spill, []);
         assert.deepEqual(errors, []);
         await context.close();
     });
