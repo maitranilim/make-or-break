@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Make-or-Break: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
+    <meta name="description" content="Brickflux: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
     <meta name="keywords" content="simulation game, physics, stress relief, builder vs breaker, chaos theory, interactive art">
-    <title>Make-or-Break | Interactive Physics Simulation</title>
+    <title>Brickflux | Interactive Physics Simulation</title>
 
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4315629123147124" crossorigin="anonymous"></script>
@@ -17,7 +17,7 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "Make-or-Break Simulation",
+      "name": "Brickflux Simulation",
       "description": "An interactive physics simulation demonstrating the balance between creation and destruction.",
       "applicationCategory": "Game",
       "operatingSystem": "Any"
@@ -237,7 +237,9 @@
             transform: translateX(-50%);
             font-size: 4rem;
             font-weight: 800;
-            color: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.55);
+            text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+            font-variant-numeric: tabular-nums;
             pointer-events: none;
             z-index: 5;
         }
@@ -443,7 +445,7 @@
 <article id="content-section">
     <div class="seo-header">
         <h2>Order vs. Chaos: The Simulation</h2>
-        <p>Welcome to Make-or-Break, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
+        <p>Welcome to Brickflux, a digital playground that visualizes the eternal struggle between construction and destruction. This isn't just a game; it's a procedural art piece driven by your choices.</p>
     </div>
 
     <div class="seo-grid">
@@ -476,7 +478,7 @@
 
         <div class="info-card full-width-card">
             <h3>The Philosophy</h3>
-            <p>Notice how easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
+            <p>Notice how much easier it is to break than to build? Or is it? By adjusting the sliders, you might find that a slow, methodical builder can outpace a frantic, chaotic breaker. This simulation is designed to be a "second monitor" experience—something to watch while you think, helping you find your own balance.</p>
         </div>
 
         <div class="info-card full-width-card">
@@ -491,7 +493,7 @@
         
         <div class="info-card">
             <h3>FAQ: Controls</h3>
-            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Speed</strong> sliders to handicap or boost specific agents.</p>
+            <p>Use the <strong>Chaos</strong> slider to introduce jitter and unpredictability. Use the <strong>Breaker</strong> and <strong>Builder</strong> sliders to handicap or boost specific agents.</p>
         </div>
     </div>
 </article>
@@ -588,6 +590,7 @@ const state = {
     running: true,
     gameOver: false,
     timeLeft: 60,
+    roundLength: 60,  // Round length in seconds, as set by the Time slider
     lastFrameTime: 0,
     seed: 0,          // Seed of the current round; the same seed gives the same starting grid
     lastResult: null  // Result of the last finished round, used for share text
@@ -665,7 +668,8 @@ function resize() {
 function resetSimulation(seed) {
     state.gameOver = false;
     state.running = true;
-    state.timeLeft = parseInt(sliderTime.value);
+    state.roundLength = parseInt(sliderTime.value);
+    state.timeLeft = state.roundLength;
     state.seed = Number.isInteger(seed) ? seed >>> 0 : randomSeed();
     state.lastResult = null;
     rng = mulberry32(state.seed);
@@ -1132,11 +1136,11 @@ const Challenge = {
             (parseInt(sliderChaos.value) > 0 ? `, ${parseInt(sliderChaos.value)}% chaos` : '') +
             (checkMulti.checked ? ', Multi on' : '');
         const r = state.lastResult;
-        if (!r) return `Try this Make-or-Break round (${settings}). Can Order win?`;
+        if (!r) return `Try this Brickflux round (${settings}). Can Order win?`;
         if (r.winner === 'Builder') {
-            return `Order won my Make-or-Break round with ${r.green}% of the grid standing (${settings}). Can you break it?`;
+            return `Order won my Brickflux round with ${r.green}% of the grid standing (${settings}). Can you break it?`;
         }
-        return `Chaos won my Make-or-Break round: only ${r.green}% of the grid survived (${settings}). Can you flip it?`;
+        return `Chaos won my Brickflux round: only ${r.green}% of the grid survived (${settings}). Can you flip it?`;
     },
 
     async share() {
@@ -1144,7 +1148,7 @@ const Challenge = {
         const text = this.buildText();
         if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
             try {
-                await navigator.share({ title: 'Make-or-Break challenge', text: text, url: url });
+                await navigator.share({ title: 'Brickflux challenge', text: text, url: url });
                 return;
             } catch (e) {
                 if (e.name === 'AbortError') return;
@@ -1184,6 +1188,15 @@ document.getElementById('btn-share').onclick = () => Challenge.share();
 document.getElementById('btn-share-result').onclick = () => Challenge.share();
 
 [sliderRed, sliderGreen, sliderTime, sliderChaos].forEach(s => s.addEventListener('input', updateLabels));
+
+// Moving the Time slider mid-round changes the current round's length and keeps the time already played
+sliderTime.addEventListener('input', () => {
+    if (state.gameOver) return;
+    const elapsed = state.roundLength - state.timeLeft;
+    state.roundLength = parseInt(sliderTime.value);
+    state.timeLeft = Math.max(state.roundLength - elapsed, 1);
+    timerDisplay.innerText = Math.ceil(state.timeLeft);
+});
 
 // Sound Toggle
 const btnSound = document.getElementById('btn-sound');
