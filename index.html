@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="Make-or-Break: A relaxing yet chaotic physics simulation where builders and breakers compete. Watch the battle between order and entropy in your browser.">
@@ -243,6 +243,7 @@
 
         /* Toggle Switch for Multi-Mode */
         .toggle-wrapper {
+            position: relative;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -277,6 +278,14 @@
         }
         input[type="checkbox"]:checked + .toggle-switch { background: var(--accent-blue); }
         input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(14px); }
+        /* Visually hidden but still focusable, so the Multi toggle works from the keyboard */
+        .toggle-wrapper input[type="checkbox"] {
+            position: absolute; width: 1px; height: 1px;
+            opacity: 0; margin: 0; pointer-events: none;
+        }
+        .toggle-wrapper input[type="checkbox"]:focus-visible + .toggle-switch,
+        input[type=range]:focus-visible,
+        .icon-btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -482,7 +491,10 @@
             .btn-group { gap: 2px; }
         }
         @media (max-width: 360px) {
-            .toggle-wrapper span { display: none; }
+            /* Keep the Multi label visible; tighten spacing instead */
+            header { padding-left: 10px; padding-right: 10px; }
+            .toggle-wrapper { gap: 6px; padding: 0 4px; }
+            .icon-btn { width: 34px; }
         }
     </style>
 </head>
@@ -501,7 +513,7 @@
                 <span class="name">Breaker</span>
                 <span class="slider-value" id="val-red">1.0x</span>
             </label>
-            <input type="range" id="slider-red" min="100" max="800" value="400" step="10">
+            <input type="range" id="slider-red" aria-label="Breaker speed" min="100" max="800" value="400" step="10">
         </div>
 
         <div class="slider-container green">
@@ -509,7 +521,7 @@
                 <span class="name">Builder</span>
                 <span class="slider-value" id="val-green">1.0x</span>
             </label>
-            <input type="range" id="slider-green" min="100" max="800" value="400" step="10">
+            <input type="range" id="slider-green" aria-label="Builder speed" min="100" max="800" value="400" step="10">
         </div>
 
         <div class="slider-container blue">
@@ -517,7 +529,7 @@
                 <span class="name">Time</span>
                 <span class="slider-value" id="val-time">60s</span>
             </label>
-            <input type="range" id="slider-time" min="10" max="120" value="60" step="5">
+            <input type="range" id="slider-time" aria-label="Round time" min="10" max="120" value="60" step="5">
         </div>
 
         <div class="slider-container chaos">
@@ -525,21 +537,21 @@
                 <span class="name">Chaos</span>
                 <span class="slider-value" id="val-chaos">0%</span>
             </label>
-            <input type="range" id="slider-chaos" min="0" max="50" value="0" step="5">
+            <input type="range" id="slider-chaos" aria-label="Chaos" min="0" max="50" value="0" step="5">
         </div>
     </div>
 
     <div class="btn-group">
         <!-- Multi-Brick Toggle -->
         <label class="toggle-wrapper" title="Balls break/build multiple bricks at once">
-            <input type="checkbox" id="check-multi" style="display:none;">
+            <input type="checkbox" id="check-multi">
             <div class="toggle-switch"></div>
             <span>Multi</span>
         </label>
 
-        <button class="icon-btn" id="btn-sound" title="Toggle Sound">
+        <button class="icon-btn" id="btn-sound" title="Toggle Sound" aria-label="Sound" aria-pressed="false">
             <!-- SVG Speaker Icon -->
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M11 5L6 9H2v6h4l5 4V5z"/>
                 <path id="sound-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none;"/>
                 <path id="sound-off" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -548,21 +560,21 @@
 
         <button class="icon-btn" id="btn-share" title="Share this round as a challenge" aria-label="Share this round as a challenge">
             <!-- SVG Share Icon -->
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 1 0 15 5c0 .24.04.47.09.7L8.04 9.81A2.99 2.99 0 1 0 8.04 14.2l7.12 4.16c-.05.21-.08.43-.08.65A2.92 2.92 0 1 0 18 16.08z"/>
             </svg>
         </button>
 
-        <button class="icon-btn" id="btn-menu" title="Match history">
+        <button class="icon-btn" id="btn-menu" title="Match history" aria-label="Match history" aria-controls="side-menu" aria-expanded="false">
             <!-- SVG History Icon -->
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8H12z"/>
             </svg>
         </button>
 
         <span class="btn-divider" aria-hidden="true"></span>
 
-        <button class="action-btn" id="btn-reset" title="Restart">
+        <button class="action-btn" id="btn-reset" title="Restart" aria-label="Restart">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
             <span class="label">Restart</span>
         </button>
@@ -646,10 +658,10 @@
 
 <!-- SIDE MENU -->
 <div id="menu-backdrop"></div>
-<div id="side-menu">
+<div id="side-menu" role="dialog" aria-label="Match history" inert>
     <div class="menu-header">
         <h3>Match History</h3>
-        <button class="icon-btn" id="btn-close-menu">✕</button>
+        <button class="icon-btn" id="btn-close-menu" aria-label="Close match history">✕</button>
     </div>
     <div class="menu-content">
         <button class="action-btn" id="btn-clear-history" style="width:100%; margin-bottom:15px; background:#2a1a1a; color:#ff5c5c; border-color:#522;">Clear History</button>
@@ -1382,20 +1394,27 @@ const soundOff = document.getElementById('sound-off');
 btnSound.onclick = () => {
     const enabled = AudioEngine.toggle();
     btnSound.classList.toggle('active', enabled);
+    btnSound.setAttribute('aria-pressed', String(enabled));
     soundOn.style.display = enabled ? 'block' : 'none';
     soundOff.style.display = enabled ? 'none' : 'block';
 };
 
 // Menu Toggle
+// A closed menu is inert so its buttons stay out of the tab order
 const menu = document.getElementById('side-menu');
+const btnMenu = document.getElementById('btn-menu');
+const btnCloseMenu = document.getElementById('btn-close-menu');
 const menuBackdrop = document.getElementById('menu-backdrop');
 function setMenuOpen(open) {
     state.menuOpen = open;
     menu.classList.toggle('open', open);
     menuBackdrop.classList.toggle('open', open);
+    menu.inert = !open;
+    btnMenu.setAttribute('aria-expanded', String(open));
+    (open ? btnCloseMenu : btnMenu).focus();
 }
-document.getElementById('btn-menu').onclick = () => setMenuOpen(true);
-document.getElementById('btn-close-menu').onclick = () => setMenuOpen(false);
+btnMenu.onclick = () => setMenuOpen(true);
+btnCloseMenu.onclick = () => setMenuOpen(false);
 menuBackdrop.onclick = () => setMenuOpen(false);
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && state.menuOpen) setMenuOpen(false);

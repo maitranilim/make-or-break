@@ -152,3 +152,9 @@ for (const width of [320, 390]) {
         await context.close();
     });
 }
+
+test('the Multi toggle keeps a visible label on the smallest phones', async () => {
+    const { page, context } = await open(320);
+    assert.equal(await page.isVisible('.toggle-wrapper span'), true);
+    await context.close();
+});
