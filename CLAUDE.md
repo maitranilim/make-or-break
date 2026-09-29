@@ -2,10 +2,20 @@
 
 ## Naming
 
-- The product is **Brickflux**. Use that name in UI copy, docs, PR titles and deploy names. The GitHub repo is still `make-or-break` until it is renamed.
-- Branches: `claude/<what-the-change-does>` in kebab-case, e.g. `claude/pages-deploy-link-previews` or `claude/prediction-streaks`. Never push work on an auto-generated name (random words like `brave-mendel`); create a descriptive branch first.
-- PR titles: a plain sentence saying what changes for the player or the repo, e.g. "Deploy to GitHub Pages with link previews". Match the style of earlier PRs.
+- The product is **Brickflux**. Use that name in UI copy, docs, PR titles and deploy names. The GitHub repo is still `make-or-break` until it is renamed; the Vercel project is already `brickflux`.
+- Branches: kebab-case words that say what the change does, e.g. `lead-change-chart` or `challenge-mode`. No tool prefixes (`claude/`, `codex/`), no random words or codes (`brave-mendel`, `i7kr77`), no dates.
+- PR titles: a plain sentence saying what changes for the player or the repo, e.g. "Show when the lead changed on the result screen". Match the style of earlier PRs.
 - Keep names coherent across GitHub and Vercel. If the GitHub repo can't be renamed, rename the Vercel project to match the GitHub repo instead.
+
+## Workflow
+
+- Small changes (copy, a URL, a one-function fix): push straight to `main` after the checks below pass.
+- Anything bigger: open a PR with a meaningful branch name and title, then merge it once CI is green.
+- Don't post comments on PRs or issues, and don't add AI-tool attribution or links to PR descriptions or comments.
+
+## Hosting
+
+- Production is on Vercel (project `brickflux`), deployed from `main`. There is no GitHub Pages deploy.
 
 ## Checks before pushing
 

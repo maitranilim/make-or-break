@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/maitranilim/make-or-break/actions/workflows/ci.yml/badge.svg)](https://github.com/maitranilim/make-or-break/actions/workflows/ci.yml)
 
-**▶ Play it: [maitranilim.github.io/make-or-break](https://maitranilim.github.io/make-or-break/)**
+**▶ Play it: [brickflux.vercel.app](https://brickflux.vercel.app/)**
 
 ![A Brickflux round: the red Breaker knocks out bricks while the green Builder lights them back up](brickflux.gif)
 
@@ -23,7 +23,7 @@ Two balls bounce around a grid of bricks. The red **Breaker** knocks out lit bri
 
 - One file, `index.html`: vanilla JavaScript, Canvas 2D and CSS. No framework, no build step, no dependencies at runtime.
 - A tiny seeded PRNG (mulberry32) drives the grid and starting angles, which is what makes share links reproducible.
-- Browser tests with Playwright run in GitHub Actions on every pull request. Pushes to `main` deploy to GitHub Pages only after the tests pass.
+- Browser tests with Playwright run in GitHub Actions on every pull request and push to `main`. Vercel deploys `main` to production.
 
 ## Run it
 

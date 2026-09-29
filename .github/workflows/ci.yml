@@ -4,8 +4,6 @@ on:
   pull_request:
   push:
     branches: [main]
-  # Lets the Pages workflow run these tests before it deploys
-  workflow_call:
 
 jobs:
   test:
