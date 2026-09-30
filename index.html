@@ -863,17 +863,41 @@
 
 <!-- JAVASCRIPT -->
 <script>
-/** * AUDIO ENGINE
- * Simple oscillator-based audio for feedback
+/**
+ * AUDIO ENGINE
+ * Every brick hit plays one short synthesized note. Its pitch and stereo position follow the brick's
+ * column, and both sides play the same scale, so any mix of hits sounds consonant.
  */
 const AudioEngine = {
     ctx: null,
     enabled: false,
-    
+    profile: 'marimba',
+    master: null,
+    voices: [],          // end times of the notes still sounding, to cap how many play at once
+    lastHit: {},         // when each side last played, to thin out runs of hits
+    noiseBuffer: null,
+
+    MAX_VOICES: 24,
+    MIN_GAP: 0.05,       // seconds between hits from the same side
+    PENTATONIC: [0, 2, 4, 7, 9],
+
     init() {
-        if (!this.ctx) {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.buildChain();
+    },
+
+    // One shared output: a gain for overall level and a compressor so a burst of hits never clips
+    buildChain() {
+        const compressor = this.ctx.createDynamicsCompressor();
+        compressor.connect(this.ctx.destination);
+        this.master = this.ctx.createGain();
+        this.master.gain.value = this.profiles[this.profile].level;
+        this.master.connect(compressor);
+        const length = Math.floor(this.ctx.sampleRate * 0.25);
+        this.noiseBuffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+        const data = this.noiseBuffer.getChannelData(0);
+        for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
     },
 
     toggle() {
@@ -883,29 +907,118 @@ const AudioEngine = {
         return this.enabled;
     },
 
-    playTone(heightPct, type) {
-        if (!this.enabled || !this.ctx) return;
-        
+    // Frequency of a note on the C major pentatonic scale; x (0 to 1) picks the note across `octaves`
+    scaleFreq(x, baseMidi, octaves) {
+        const steps = this.PENTATONIC.length * octaves;
+        const i = Math.min(steps - 1, Math.max(0, Math.floor(x * steps)));
+        const midi = baseMidi + 12 * Math.floor(i / this.PENTATONIC.length) + this.PENTATONIC[i % this.PENTATONIC.length];
+        return 440 * Math.pow(2, (midi - 69) / 12);
+    },
+
+    // A pitched voice: fast attack, exponential decay, optional glide from `from` Hz to the note
+    tone(out, t, wave, freq, { gain, decay, attack = 0.003, from = freq, glide = 0.04, lowpass = 0 }) {
         const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        // Sound Profile: Breaker is lower/sawtooth, Builder is higher/sine
-        const baseFreq = type === 'breaker' ? 100 : 300;
-        const freq = baseFreq + (heightPct * 500); 
-        
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        osc.type = type === 'breaker' ? 'sawtooth' : 'sine';
-        
-        // Quick decay envelope
-        const vol = type === 'breaker' ? 0.04 : 0.03;
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-        
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        const amp = this.ctx.createGain();
+        osc.type = wave;
+        osc.frequency.setValueAtTime(from, t);
+        if (from !== freq) osc.frequency.exponentialRampToValueAtTime(freq, t + glide);
+        amp.gain.setValueAtTime(0.0001, t);
+        amp.gain.linearRampToValueAtTime(gain, t + attack);
+        amp.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+        osc.connect(amp);
+        if (lowpass) {
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = lowpass;
+            amp.connect(filter);
+            filter.connect(out);
+        } else {
+            amp.connect(out);
+        }
+        osc.start(t);
+        osc.stop(t + attack + decay + 0.02);
+    },
+
+    // A burst of filtered noise: a knock, a crackle or a click
+    noise(out, t, filterType, freq, { gain, decay }) {
+        const src = this.ctx.createBufferSource();
+        const filter = this.ctx.createBiquadFilter();
+        const amp = this.ctx.createGain();
+        src.buffer = this.noiseBuffer;
+        filter.type = filterType;
+        filter.frequency.value = freq;
+        amp.gain.setValueAtTime(gain, t);
+        amp.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+        src.connect(filter);
+        filter.connect(amp);
+        amp.connect(out);
+        src.start(t);
+        src.stop(t + decay + 0.02);
+    },
+
+    // The three sound designs on offer. `tail` is how long a note keeps sounding; `level` evens out loudness.
+    profiles: {
+        // Warm mallet notes for the Builder, a soft wooden knock for the Breaker
+        marimba: {
+            level: 1, tail: 0.5,
+            builder(a, out, t, x) {
+                const f = a.scaleFreq(x, 72, 2);
+                a.tone(out, t, 'sine', f, { gain: 0.5, decay: 0.42 });
+                a.tone(out, t, 'sine', f * 4, { gain: 0.14, decay: 0.09 });
+                a.noise(out, t, 'bandpass', 2600, { gain: 0.05, decay: 0.01 });
+            },
+            breaker(a, out, t, x) {
+                const f = a.scaleFreq(x, 48, 1);
+                a.tone(out, t, 'triangle', f, { gain: 0.75, decay: 0.17, from: f * 1.6, glide: 0.05 });
+                a.noise(out, t, 'bandpass', 900, { gain: 0.16, decay: 0.012 });
+            }
+        },
+        // Bright glass bells for the Builder, a crackle and low thump for the Breaker
+        glass: {
+            level: 1, tail: 0.9,
+            builder(a, out, t, x) {
+                const f = a.scaleFreq(x, 84, 1);
+                [[1, 0.3, 0.75], [2.76, 0.16, 0.42], [5.4, 0.08, 0.24]].forEach(([ratio, gain, decay]) => {
+                    a.tone(out, t, 'sine', f * ratio, { gain: gain, decay: decay, attack: 0.002 });
+                });
+            },
+            breaker(a, out, t, x) {
+                a.noise(out, t, 'highpass', 2000 + x * 3000, { gain: 0.4, decay: 0.05 });
+                a.tone(out, t, 'sine', 55, { gain: 0.55, decay: 0.13, from: 110, glide: 0.06 });
+            }
+        },
+        // Chiptune blips: a rising two-note chirp for the Builder, a falling bleep for the Breaker
+        arcade: {
+            level: 1, tail: 0.2,
+            builder(a, out, t, x) {
+                const f = a.scaleFreq(x, 67, 2);
+                a.tone(out, t, 'square', f, { gain: 0.13, decay: 0.06, attack: 0.002, lowpass: 3800 });
+                a.tone(out, t + 0.055, 'square', f * 2, { gain: 0.13, decay: 0.08, attack: 0.002, lowpass: 3800 });
+            },
+            breaker(a, out, t, x) {
+                const f = a.scaleFreq(x, 55, 1);
+                a.tone(out, t, 'square', f, { gain: 0.14, decay: 0.12, attack: 0.002, from: f * 2, glide: 0.1, lowpass: 2600 });
+                a.noise(out, t, 'lowpass', 1400, { gain: 0.09, decay: 0.05 });
+            }
+        }
+    },
+
+    // Plays one hit. `side` is 'builder' or 'breaker', x (0 to 1) is the brick's place across the grid,
+    // and `when` schedules it that many seconds ahead.
+    play(side, x, when = 0) {
+        if (!this.enabled || !this.ctx) return;
+        const profile = this.profiles[this.profile];
+        const t = this.ctx.currentTime + when;
+        if (t - (this.lastHit[side] ?? -1) < this.MIN_GAP) return;
+        this.voices = this.voices.filter(end => end > t);
+        if (this.voices.length >= this.MAX_VOICES) return;
+        this.lastHit[side] = t;
+        this.voices.push(t + profile.tail);
+
+        const pan = this.ctx.createStereoPanner();
+        pan.pan.value = (x * 2 - 1) * 0.6;
+        pan.connect(this.master);
+        profile[side](this, pan, t, x);
     }
 };
 
@@ -1231,9 +1344,8 @@ function checkBrickCollision(ball) {
                 triggerBrick(brick, ball.type);
             }
             
-            // Sound
-            const heightPct = 1 - (brick.y / LOGICAL_HEIGHT);
-            AudioEngine.playTone(heightPct, ball.type);
+            // Sound: pitch and stereo position follow the brick's column
+            AudioEngine.play(ball.type, (brick.x + brick.w / 2) / LOGICAL_WIDTH);
 
             return true; // Only hit one cluster per step
         }
