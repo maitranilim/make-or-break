@@ -15,6 +15,8 @@ Two balls bounce around a grid of bricks. The red **Breaker** knocks out lit bri
 - **You set the rules.** Sliders for each side's speed, round length and chaos (how much their paths wobble). **Multi** lets a hit spread to neighbouring bricks.
 - **Seeded challenge links.** Every round starts from a seeded grid. **Share** copies a link such as `?seed=k3x9q1&breaker=560&builder=300&time=60&chaos=0`. Whoever opens it plays the same grid with the same settings. **Replay This Grid** retries it.
 - **Onboarding tour.** First-time visitors get a three-step tour. Returning visitors go straight to a Start button.
+- **Pause any time.** A pause button (or **P**) freezes the round, and switching tabs pauses it for you.
+- **Lead-change chart.** The result screen plots the share of lit bricks against the 50% line that decides the winner, marks every time the lead switched sides, and lets you read any moment with the pointer or arrow keys.
 - **Match history.** A side panel lists past rounds, stored locally in the browser.
 - **Keyboard and screen reader friendly.** Labelled controls, focus handling for dialogs and the history panel, and a live region for messages.
 - **Physics that doesn't tunnel.** Fast balls are sub-stepped so they can't skip through bricks, and headings are kept off the axes so a ball never gets stuck skimming a wall.

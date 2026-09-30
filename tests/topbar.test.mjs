@@ -145,6 +145,7 @@ for (const width of [320, 390]) {
         const clipped = await page.evaluate(() => {
             const wr = document.getElementById('game-wrapper').getBoundingClientRect();
             return [...document.querySelectorAll('#overlay-result h2, #overlay-result div, #overlay-result button')]
+                .filter(el => el.getClientRects().length > 0)
                 .filter(el => { const r = el.getBoundingClientRect(); return r.top < wr.top - 0.5 || r.bottom > wr.bottom + 0.5; })
                 .map(el => el.id || el.className);
         });
