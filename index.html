@@ -249,6 +249,8 @@
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
         .icon-btn:hover { color: var(--text-color); background: #1a1e38; }
         .icon-btn.active { color: var(--accent-blue); }
+        .icon-btn:disabled { opacity: 0.35; cursor: default; }
+        .icon-btn:disabled:hover { color: var(--text-muted); background: transparent; }
 
         button:focus-visible {
             outline: 2px solid var(--accent-blue);
@@ -349,6 +351,27 @@
             animation: fadeIn 0.3s ease;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- PAUSE OVERLAY: dims the board but leaves it readable --- */
+        #overlay-paused {
+            position: absolute;
+            inset: 0;
+            background: rgba(11, 13, 22, 0.55);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            z-index: 40;
+        }
+        #overlay-paused[hidden] { display: none; }
+        .paused-label {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-color);
+        }
 
         /* --- START / ONBOARDING OVERLAY --- */
         #overlay-start {
@@ -627,6 +650,13 @@
             <span>Multi</span>
         </label>
 
+        <button class="icon-btn" id="btn-pause" title="Pause (P)" aria-label="Pause" aria-keyshortcuts="P" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path id="pause-icon" d="M6 5h4v14H6zM14 5h4v14h-4z"/>
+                <path id="play-icon" d="M8 5v14l11-7z" style="display:none;"/>
+            </svg>
+        </button>
+
         <button class="icon-btn" id="btn-sound" title="Toggle Sound" aria-label="Sound" aria-pressed="false">
             <!-- SVG Speaker Icon -->
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -700,6 +730,11 @@
                     <button class="link-btn" id="btn-how">How it works</button>
                 </div>
             </div>
+        </div>
+        <!-- Overlay Paused -->
+        <div id="overlay-paused" hidden>
+            <div class="paused-label">Paused</div>
+            <button class="action-btn primary" id="btn-resume">Resume</button>
         </div>
         <!-- Overlay Result -->
         <div id="overlay-result">
@@ -853,7 +888,8 @@ const state = {
     lastFrameTime: 0,
     seed: 0,          // Seed of the current round; the same seed gives the same starting grid
     lastResult: null, // Result of the last finished round, used for share text
-    menuOpen: false   // History panel is open; the round pauses behind it
+    menuOpen: false,  // History panel is open; the round pauses behind it
+    paused: false     // The player paused the round; Resume or P continues it
 };
 
 /**
@@ -927,6 +963,7 @@ function resize() {
 
 function resetSimulation(seed) {
     state.gameOver = false;
+    setPaused(false);
     state.running = state.started;
     state.roundLength = parseInt(sliderTime.value);
     state.timeLeft = state.roundLength;
@@ -1034,7 +1071,7 @@ function gameLoop(timestamp) {
     const dt = (timestamp - state.lastFrameTime) / 1000;
     state.lastFrameTime = timestamp;
 
-    if (state.running && !state.gameOver && !state.menuOpen) {
+    if (state.running && !state.gameOver && !state.menuOpen && !state.paused) {
         update(Math.min(dt, 0.1)); // Cap dt to prevent skipping
     }
     
@@ -1191,6 +1228,7 @@ function rectCircleIntersect(rect, circle) {
 
 function endGame() {
     state.gameOver = true;
+    setPaused(false);
     const active = bricks.filter(b => b.active).length;
     const total = bricks.length;
     const greenPct = (active / total * 100).toFixed(1);
@@ -1535,6 +1573,46 @@ btnSound.onclick = () => {
 
 // Menu Toggle
 // A closed menu is inert so its buttons stay out of the tab order
+/**
+ * PAUSE
+ * Freezes the round in place; the timer and both balls stop until Resume.
+ */
+const btnPause = document.getElementById('btn-pause');
+const overlayPaused = document.getElementById('overlay-paused');
+const pauseIcon = document.getElementById('pause-icon');
+const playIcon = document.getElementById('play-icon');
+
+function canPause() {
+    return state.started && !state.gameOver;
+}
+
+// Keeps the button, icon and overlay in step with state.paused and whether a round is in play
+function syncPauseUI() {
+    const paused = state.paused;
+    overlayPaused.hidden = !paused;
+    pauseIcon.style.display = paused ? 'none' : '';
+    playIcon.style.display = paused ? '' : 'none';
+    btnPause.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    btnPause.title = paused ? 'Resume (P)' : 'Pause (P)';
+    btnPause.disabled = !canPause();
+}
+
+function setPaused(paused) {
+    state.paused = paused && canPause();
+    syncPauseUI();
+}
+
+function togglePause() {
+    if (!canPause()) return;
+    setPaused(!state.paused);
+    if (state.paused) showToast('Paused. Press P or Resume to continue.');
+}
+
+btnPause.onclick = togglePause;
+document.getElementById('btn-resume').onclick = () => setPaused(false);
+// Switching tabs or apps pauses the round so nobody loses time they did not see
+document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+
 const menu = document.getElementById('side-menu');
 const btnMenu = document.getElementById('btn-menu');
 const btnCloseMenu = document.getElementById('btn-close-menu');
@@ -1552,6 +1630,7 @@ btnCloseMenu.onclick = () => setMenuOpen(false);
 menuBackdrop.onclick = () => setMenuOpen(false);
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && state.menuOpen) setMenuOpen(false);
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey && !state.menuOpen) togglePause();
 });
 
 /**
@@ -1600,6 +1679,7 @@ function startSimulation() {
     overlayStart.hidden = true;
     state.started = true;
     state.running = true;
+    syncPauseUI();
 }
 
 btnOnbNext.onclick = () => {
