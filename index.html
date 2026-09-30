@@ -463,6 +463,50 @@
             z-index: 5;
         }
 
+        /* Lead-change chart on the result screen */
+        #lead-chart {
+            --fill-order: rgba(77, 255, 136, 0.5);
+            --fill-chaos: rgba(255, 92, 92, 0.5);
+            position: relative;
+            width: min(520px, calc(100% - 32px));
+            margin: 0 0 18px;
+        }
+        #lead-chart[hidden] { display: none; }
+        /* A screen too short for the chart keeps only the one-line summary */
+        #lead-chart.summary-only #lead-chart-plot, #lead-chart.summary-only .lc-legend { display: none; }
+        #lead-chart.summary-only { margin-bottom: 10px; }
+        #lead-chart svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+        #lead-chart svg:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 3px; border-radius: 4px; }
+        .lc-area.order { fill: var(--fill-order); }
+        .lc-area.chaos { fill: var(--fill-chaos); }
+        .lc-line { fill: none; stroke: var(--text-color); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+        .lc-base { stroke: #4d5470; stroke-width: 1; }
+        .lc-tick { fill: var(--text-muted); font-size: 10px; font-family: inherit; }
+        .lc-marker { fill: var(--text-color); stroke: #0b0d16; stroke-width: 2; }
+        .lc-cross { stroke: var(--text-muted); stroke-width: 1; }
+        .lc-dot { fill: var(--text-color); stroke: #0b0d16; stroke-width: 2; }
+        .lc-tip {
+            position: absolute;
+            top: -4px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(22, 26, 48, 0.96);
+            border: 1px solid #333855;
+            color: var(--text-color);
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            pointer-events: none;
+            font-variant-numeric: tabular-nums;
+        }
+        .lc-tip[hidden] { display: none; }
+        .lc-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+        .lc-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+        .lc-key i.order { background: var(--fill-order); }
+        .lc-key i.chaos { background: var(--fill-chaos); }
+        .lc-key i.mark { background: var(--text-color); border-radius: 50%; }
+        #lead-chart-summary { margin: 4px 0 0; font-size: 12px; line-height: 1.4; color: #aaa; text-align: center; }
+
         .result-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 0 16px; }
         .result-actions .action-btn { padding: 12px 20px; }
         .btn-primary { background: var(--accent-blue) !important; border: none !important; color: #fff !important; }
@@ -584,6 +628,9 @@
             /* The game area is short on phones; keep the round result and its buttons inside it */
             #result-title { font-size: 1.75rem !important; }
             #result-desc { font-size: 0.95rem !important; margin-bottom: 14px !important; }
+            #lead-chart { margin-bottom: 10px; }
+            .lc-legend { margin-top: 4px; gap: 2px 10px; font-size: 10px; }
+            #lead-chart-summary { margin-top: 2px; font-size: 11px; }
             .result-actions { gap: 8px; }
             .result-actions .action-btn { padding: 0 14px; height: 34px; font-size: 11px; }
         }
@@ -740,6 +787,16 @@
         <div id="overlay-result">
             <h2 id="result-title" style="color:#fff; font-size:3rem; margin-bottom:10px;">GAME OVER</h2>
             <div id="result-desc" style="font-size:1.2rem; color:#aaa; margin-bottom:30px; padding:0 16px; text-align:center;">Result description here</div>
+            <figure id="lead-chart" hidden>
+                <div id="lead-chart-plot"></div>
+                <div id="lead-chart-tip" class="lc-tip" role="status" hidden></div>
+                <div class="lc-legend" id="lead-chart-legend">
+                    <span class="lc-key"><i class="order"></i>Order ahead</span>
+                    <span class="lc-key"><i class="chaos"></i>Chaos ahead</span>
+                    <span class="lc-key"><i class="mark"></i>Lead changed</span>
+                </div>
+                <p id="lead-chart-summary"></p>
+            </figure>
             <div class="result-actions">
                 <button class="action-btn btn-primary" id="btn-share-result">Share Challenge</button>
                 <button class="action-btn" id="btn-replay">Replay This Grid</button>
@@ -876,6 +933,10 @@ const timerDisplay = document.getElementById('timer-display');
 const overlayResult = document.getElementById('overlay-result');
 const resultTitle = document.getElementById('result-title');
 const resultDesc = document.getElementById('result-desc');
+const leadChart = document.getElementById('lead-chart');
+const leadChartPlot = document.getElementById('lead-chart-plot');
+const leadChartTip = document.getElementById('lead-chart-tip');
+const leadChartSummary = document.getElementById('lead-chart-summary');
 
 // State
 const state = {
@@ -889,7 +950,8 @@ const state = {
     seed: 0,          // Seed of the current round; the same seed gives the same starting grid
     lastResult: null, // Result of the last finished round, used for share text
     menuOpen: false,  // History panel is open; the round pauses behind it
-    paused: false     // The player paused the round; Resume or P continues it
+    paused: false,    // The player paused the round; Resume or P continues it
+    litHistory: []    // {t, lit}: seconds played and lit bricks, recorded whenever the count changes
 };
 
 /**
@@ -977,6 +1039,8 @@ function resetSimulation(seed) {
 
     initBricks();
     initBalls();
+    state.litHistory = [];
+    recordLit();
 }
 
 // Only touch the DOM when the shown number actually changes, not every frame
@@ -1136,6 +1200,8 @@ function update(dt) {
         if (b.trail.length > 25) b.trail.pop(); // Slightly longer trail for the jet look
         b.trail.forEach(t => t.age += dt);
     });
+
+    recordLit();
 }
 
 function checkBrickCollision(ball) {
@@ -1235,6 +1301,7 @@ function endGame() {
     const redPct = ((total - active) / total * 100).toFixed(1);
     const builderWon = active > (total / 2);
     state.lastResult = { winner: builderWon ? 'Builder' : 'Breaker', green: greenPct };
+    state.litHistory.push({ t: state.elapsed, lit: active });
 
     // Save History
     saveHistory({
@@ -1254,6 +1321,203 @@ function endGame() {
         resultDesc.innerHTML = `Entropy reigns. Only ${greenPct}% of the grid survived.`;
     }
     overlayResult.style.display = 'flex';
+    renderLeadChart();
+}
+
+/**
+ * LEAD CHANGES
+ * The lit-brick count is recorded whenever it changes. The result screen plots it against the
+ * 50% line that decides the winner and marks each time the lead switched sides.
+ */
+function countLit() {
+    let lit = 0;
+    for (let i = 0; i < bricks.length; i++) if (bricks[i].active) lit++;
+    return lit;
+}
+
+function recordLit() {
+    if (state.gameOver) return;
+    const lit = countLit();
+    const h = state.litHistory;
+    if (!h.length || h[h.length - 1].lit !== lit) h.push({ t: state.elapsed, lit: lit });
+}
+
+// Lit bricks at time t: the count stays the same until the next recorded change
+function litAt(history, t) {
+    let lo = 0, hi = history.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (history[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    return history[lo].lit;
+}
+
+// Who led and for how long, and each moment the lead passed from one side to the other.
+// A level count (exactly half) belongs to nobody, so a lead that goes through a tie still counts as a change.
+function analyzeLead(history, total) {
+    const half = total / 2;
+    const changes = [];
+    let orderTime = 0, chaosTime = 0, leader = 0;
+    for (let i = 0; i < history.length; i++) {
+        const side = history[i].lit > half ? 1 : history[i].lit < half ? -1 : 0;
+        if (side !== 0) {
+            if (leader !== 0 && side !== leader) changes.push({ t: history[i].t, to: side === 1 ? 'Order' : 'Chaos' });
+            leader = side;
+        }
+        if (i + 1 < history.length) {
+            const span = history[i + 1].t - history[i].t;
+            if (side === 1) orderTime += span;
+            else if (side === -1) chaosTime += span;
+        }
+    }
+    return { changes: changes, orderTime: orderTime, chaosTime: chaosTime };
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(parent, name, attrs) {
+    const el = document.createElementNS(SVG_NS, name);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+}
+
+function renderLeadChart() {
+    const h = state.litHistory;
+    const duration = h.length ? h[h.length - 1].t : 0;
+    leadChart.hidden = h.length < 2 || duration <= 0;
+    leadChart.classList.remove('summary-only');
+    if (leadChart.hidden) return;
+
+    const total = bricks.length;
+    const half = total / 2;
+    const compact = window.matchMedia('(max-width: 800px)').matches;
+    const W = Math.max(200, Math.floor(leadChart.clientWidth));
+    const M = { l: 34, r: 8, t: 6, b: 16 };
+    const plotW = W - M.l - M.r;
+    const plotH = compact ? 40 : 110;
+    const H = M.t + plotH + M.b;
+    const a = analyzeLead(h, total);
+
+    // The range is symmetric around 50%, so "ahead" and "behind" get equal room
+    const dOf = lit => (lit - half) / total * 100; // percentage points above the 50% line
+    let dev = 0;
+    h.forEach(p => { dev = Math.max(dev, Math.abs(dOf(p.lit))); });
+    const span = Math.max(5, Math.ceil((dev + 1) / 5) * 5);
+    const x = t => M.l + t / duration * plotW;
+    const y = d => M.t + plotH / 2 - d / span * plotH / 2;
+    const f = n => n.toFixed(1);
+
+    // Sample the step series once per pixel column (up to 240) so the drawing stays small
+    const N = Math.min(Math.floor(plotW), 240);
+    const pts = [];
+    for (let k = 0; k <= N; k++) {
+        const t = duration * k / N;
+        pts.push({ px: x(t), d: dOf(litAt(h, t)) });
+    }
+
+    // Fill between the line and 50%: one polygon per stretch on the same side, cut exactly at the crossing
+    const areas = { '1': '', '-1': '' };
+    const flush = run => {
+        if (!run || run.pts.length < 2) return;
+        const base = f(y(0));
+        let d = `M${f(run.pts[0].px)},${base}`;
+        run.pts.forEach(p => { d += `L${f(p.px)},${f(y(p.d))}`; });
+        areas[run.side] += d + `L${f(run.pts[run.pts.length - 1].px)},${base}Z`;
+    };
+    let run = null, prev = null;
+    pts.forEach(p => {
+        const s = Math.sign(p.d);
+        if (prev && s !== 0 && Math.sign(prev.d) !== 0 && s !== Math.sign(prev.d)) {
+            const share = Math.abs(prev.d) / (Math.abs(prev.d) + Math.abs(p.d));
+            const cx = prev.px + (p.px - prev.px) * share;
+            run.pts.push({ px: cx, d: 0 });
+            flush(run);
+            run = { side: s, pts: [{ px: cx, d: 0 }] };
+        }
+        if (s === 0) {
+            if (run) { run.pts.push(p); flush(run); run = null; }
+        } else {
+            if (!run) run = { side: s, pts: [prev && Math.sign(prev.d) === 0 ? prev : { px: p.px, d: 0 }] };
+            run.pts.push(p);
+        }
+        prev = p;
+    });
+    flush(run);
+
+    // Text summary, also used as the chart's accessible name
+    const n = a.changes.length;
+    const leader = a.orderTime >= a.chaosTime ? { name: 'Order', time: a.orderTime } : { name: 'Chaos', time: a.chaosTime };
+    const leaderPct = Math.round(leader.time / duration * 100);
+    const summary = compact
+        ? `${n} lead change${n === 1 ? '' : 's'}` + (leader.time > 0 ? ` · ${leader.name} ahead ${leaderPct}%` : '')
+        : (n === 0 ? 'The lead never changed.' : n === 1 ? 'The lead changed once.' : `The lead changed ${n} times.`) +
+          (leader.time > 0 ? ` ${leader.name} was ahead ${leaderPct}% of the round.` : '');
+    leadChartSummary.textContent = summary;
+    const label = 'Lit bricks over the round against the 50% line that decides the winner. ' + summary +
+        (n ? ' Lead changes at ' + a.changes.map(c => f(c.t) + ' seconds').join(', ') + '.' : '') +
+        ' Use the arrow keys to read values.';
+
+    const svg = svgEl(null, 'svg', {
+        viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: '0', role: 'group',
+        'aria-roledescription': 'chart', 'aria-label': label
+    });
+    svgEl(svg, 'line', { x1: M.l, x2: M.l + plotW, y1: y(0), y2: y(0), class: 'lc-base' });
+    if (areas['1']) svgEl(svg, 'path', { d: areas['1'], class: 'lc-area order' });
+    if (areas['-1']) svgEl(svg, 'path', { d: areas['-1'], class: 'lc-area chaos' });
+    svgEl(svg, 'polyline', { points: pts.map(p => `${f(p.px)},${f(y(p.d))}`).join(' '), class: 'lc-line' });
+
+    [span, 0, -span].forEach(d => {
+        svgEl(svg, 'text', { x: M.l - 6, y: y(d), dy: '0.35em', 'text-anchor': 'end', class: 'lc-tick' }).textContent = `${50 + d}%`;
+    });
+    [[0, 'start'], [duration / 2, 'middle'], [duration, 'end']].forEach(([t, anchor]) => {
+        svgEl(svg, 'text', { x: x(t), y: H - 3, 'text-anchor': anchor, class: 'lc-tick' }).textContent = `${Math.round(t)}s`;
+    });
+
+    a.changes.forEach(c => {
+        const m = svgEl(svg, 'circle', { cx: x(c.t), cy: y(0), r: 5, class: 'lc-marker' });
+        svgEl(m, 'title', {}).textContent = `${c.to} took the lead at ${f(c.t)}s`;
+    });
+
+    // Crosshair and readout, by pointer or arrow keys
+    const cross = svgEl(svg, 'line', { y1: M.t, y2: M.t + plotH, class: 'lc-cross', visibility: 'hidden' });
+    const dot = svgEl(svg, 'circle', { r: 4, class: 'lc-dot', visibility: 'hidden' });
+    let cursor = duration;
+    const show = t => {
+        cursor = Math.min(duration, Math.max(0, t));
+        const lit = litAt(h, cursor);
+        const cx = x(cursor);
+        cross.setAttribute('x1', cx); cross.setAttribute('x2', cx);
+        dot.setAttribute('cx', cx); dot.setAttribute('cy', y(dOf(lit)));
+        cross.setAttribute('visibility', 'visible'); dot.setAttribute('visibility', 'visible');
+        const side = lit > half ? 'Order ahead' : lit < half ? 'Chaos ahead' : 'Level';
+        leadChartTip.textContent = `${f(cursor)}s · ${f(lit / total * 100)}% lit · ${side}`;
+        leadChartTip.hidden = false;
+        leadChartTip.style.left = Math.min(W - leadChartTip.offsetWidth, Math.max(0, cx - leadChartTip.offsetWidth / 2)) + 'px';
+    };
+    const hide = () => {
+        cross.setAttribute('visibility', 'hidden'); dot.setAttribute('visibility', 'hidden');
+        leadChartTip.hidden = true;
+    };
+    const fromPointer = e => {
+        const r = svg.getBoundingClientRect();
+        show(((e.clientX - r.left) * (W / r.width) - M.l) / plotW * duration);
+    };
+    svg.addEventListener('pointermove', fromPointer);
+    svg.addEventListener('pointerdown', fromPointer);
+    svg.addEventListener('pointerleave', () => { if (document.activeElement !== svg) hide(); });
+    svg.addEventListener('focus', () => show(cursor));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', e => {
+        const step = duration / 40;
+        const next = { ArrowLeft: cursor - step, ArrowRight: cursor + step, Home: 0, End: duration }[e.key];
+        if (next === undefined) return;
+        e.preventDefault();
+        show(next);
+    });
+
+    leadChartPlot.replaceChildren(svg);
+    hide();
+    if (overlayResult.scrollHeight > overlayResult.clientHeight + 1) leadChart.classList.add('summary-only');
 }
 
 /**
@@ -1698,7 +1962,10 @@ btnStart.onclick = startSimulation;
 document.getElementById('btn-how').onclick = openOnboarding;
 
 // Resize Listener
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => {
+    resize();
+    if (state.gameOver) renderLeadChart();
+});
 
 // Init
 renderHistory();
